@@ -1,0 +1,7 @@
+# Source and output media - keep the repo light
+footage/*
+music/*
+exports/*
+!footage/.gitkeep
+!music/.gitkeep
+!exports/.gitkeep
