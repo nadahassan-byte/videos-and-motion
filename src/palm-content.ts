@@ -11,6 +11,12 @@ export type Carousel = {
   area: Ring[];
   /** Overrides the auto-computed camera push when set. */
   zoom?: number;
+  /**
+   * The area the previous carousel ended on. When set, this slide opens on
+   * that exact camera and highlight and moves on from it, so the three read
+   * as one continuous journey rather than three separate zoom-ins.
+   */
+  prevArea?: Ring[];
 };
 
 export const theme = {
@@ -56,6 +62,7 @@ export const FRONDS: Carousel = {
     },
   ],
   area: fronds,
+  prevArea: trunk,
 };
 
 export const CRESCENT: Carousel = {
@@ -75,4 +82,5 @@ export const CRESCENT: Carousel = {
     },
   ],
   area: crescent,
+  prevArea: fronds,
 };

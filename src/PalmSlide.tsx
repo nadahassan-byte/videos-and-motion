@@ -42,16 +42,19 @@ const toPath = (ring: Ring) =>
     )
     .join(" ") + "Z";
 
-/** Bounding box of every ring, used to aim and size the camera push. */
-const bounds = (rings: Ring[]) => {
+/** Where the camera sits to frame a set of rings: centre point and zoom. */
+const cameraFor = (rings: Ring[] | undefined, zoom?: number) => {
+  if (!rings || rings.length === 0) return { cx: 0.5, cy: 0.5, scale: 1 };
   const xs = rings.flat().map((p) => p[0]);
   const ys = rings.flat().map((p) => p[1]);
-  return {
-    x0: Math.min(...xs),
-    x1: Math.max(...xs),
-    y0: Math.min(...ys),
-    y1: Math.max(...ys),
-  };
+  const x0 = Math.min(...xs);
+  const x1 = Math.max(...xs);
+  const y0 = Math.min(...ys);
+  const y1 = Math.max(...ys);
+  // Push in until the area fills ~88% of the frame, never past legibility.
+  const scale =
+    zoom ?? Math.min(Math.max(Math.min(0.88 / (x1 - x0), 0.88 / (y1 - y0)), 1.05), 4);
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, scale };
 };
 
 export const PalmSlide: React.FC<Carousel> = ({
@@ -60,27 +63,30 @@ export const PalmSlide: React.FC<Carousel> = ({
   bedroomTypes,
   area,
   zoom,
+  prevArea,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = (sec: number) => sec * fps;
 
-  const b = bounds(area);
-  const cx = (b.x0 + b.x1) / 2;
-  const cy = (b.y0 + b.y1) / 2;
-  // Push in until the area fills ~88% of the frame, never past legibility.
-  const target =
-    zoom ??
-    Math.min(Math.max(Math.min(0.88 / (b.x1 - b.x0), 0.88 / (b.y1 - b.y0)), 1.05), 4);
+  // The camera starts where the previous carousel left off - or on the whole
+  // island for the first one - and moves to frame this slide's area.
+  const from = cameraFor(prevArea);
+  const to = cameraFor(area, zoom);
 
-  const scale = ease(frame, s(1), s(2.5), 1, target);
-  const travel = ease(frame, s(1), s(2.5), 0, 1);
+  const scale = ease(frame, s(1), s(2.5), from.scale, to.scale);
+  const cx = ease(frame, s(1), s(2.5), from.cx, to.cx);
+  const cy = ease(frame, s(1), s(2.5), from.cy, to.cy);
+
   // Never pan further than the zoom has overhang, or background shows through
   // at the edge of the viewport.
-  const clamp = (v: number, limit: number) =>
-    Math.max(-limit, Math.min(limit, v));
-  const tx = clamp((0.5 - cx) * COL_W * travel, ((scale - 1) * COL_W) / 2);
-  const ty = clamp((0.5 - cy) * MAP_H * travel, ((scale - 1) * MAP_H) / 2);
+  const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
+  const tx = clamp((0.5 - cx) * COL_W, ((scale - 1) * COL_W) / 2);
+  const ty = clamp((0.5 - cy) * MAP_H, ((scale - 1) * MAP_H) / 2);
+
+  // The outgoing highlight lingers for a beat, then clears as the camera moves.
+  const prevPaths = (prevArea ?? []).map(toPath);
+  const prevFade = ease(frame, s(0.4), s(1.5), 1, 0);
 
   const draw = ease(frame, s(2.5), s(3.7), 1, 0);
   const fill = ease(frame, s(3.7), s(4.5), 0, 0.4);
@@ -88,6 +94,7 @@ export const PalmSlide: React.FC<Carousel> = ({
 
   const paths = area.map(toPath);
   const maskId = `keep-${areaName.replace(/\s+/g, "")}`;
+  const prevMaskId = `keep-prev-${areaName.replace(/\s+/g, "")}`;
 
   /** Content blocks rise and fade, one after another - short and snappy. */
   const reveal = (at: number) => ({
@@ -188,7 +195,53 @@ export const PalmSlide: React.FC<Carousel> = ({
                   <path key={i} d={d} fill="black" />
                 ))}
               </mask>
+              {prevPaths.length ? (
+                <mask id={prevMaskId}>
+                  <rect width={IMG_W} height={IMG_H} fill="white" />
+                  {prevPaths.map((d, i) => (
+                    <path key={i} d={d} fill="black" />
+                  ))}
+                </mask>
+              ) : null}
             </defs>
+
+            {/* the previous carousel's highlight, carried in and cleared */}
+            {prevPaths.length ? (
+              <g opacity={prevFade}>
+                <rect
+                  width={IMG_W}
+                  height={IMG_H}
+                  fill={theme.bg}
+                  opacity={0.6}
+                  mask={`url(#${prevMaskId})`}
+                />
+                {prevPaths.map((d, i) => (
+                  <path key={`pf${i}`} d={d} fill={theme.gold} opacity={0.4} />
+                ))}
+                {prevPaths.map((d, i) => (
+                  <path
+                    key={`pt${i}`}
+                    d={d}
+                    fill="#3A2A18"
+                    opacity={0.22}
+                    style={{ mixBlendMode: "multiply" }}
+                  />
+                ))}
+                {prevPaths.map((d, i) => (
+                  <path
+                    key={`ps${i}`}
+                    d={d}
+                    fill="none"
+                    stroke={theme.gold}
+                    strokeWidth={2.4 / scale}
+                    strokeLinejoin="round"
+                    style={{
+                      filter: `drop-shadow(0 0 ${2.5 / scale}px ${theme.gold}B0)`,
+                    }}
+                  />
+                ))}
+              </g>
+            ) : null}
 
             {/* everything outside the selection sinks back */}
             <rect
