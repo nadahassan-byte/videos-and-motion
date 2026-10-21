@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, CanvasImage, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { at } from "./anim";
-import { theme, WHOLE_ISLAND } from "./palm-content";
+import { PINS, theme, WHOLE_ISLAND } from "./palm-content";
 import type { Ring } from "./palm-geo";
 
 /*
@@ -25,7 +25,7 @@ export const toFrame = (rings: Ring[] | undefined): Ring[] | undefined =>
 
 const W = 1080;
 const H = 1350;
-const CONTENT_W = 1634;
+const CONTENT_W = 1250;
 const CONTENT_H = Math.round(CONTENT_W / (IMG_W / IMG_H));
 
 const toPath = (ring: Ring) =>
@@ -83,6 +83,14 @@ export const SatelliteMap: React.FC<{
   const draw = at(frame, fps, 2.4, 3.8, 1, 0); // 2.4-3.8s: outline draws
   const fill = at(frame, fps, 3.8, 4.5, 0, 0.38);
   const dim = at(frame, fps, 3.8, 4.5, 0, 0.34);
+
+  // Labels live outside the transform so they keep a constant size; this maps
+  // a point on the map to where it currently sits on screen.
+  const project = (nx: number, ny: number) => ({
+    x: (W - CONTENT_W) / 2 + cx * CONTENT_W + tx + (nx - cx) * CONTENT_W * scale,
+    y: (H - CONTENT_H) / 2 + cy * CONTENT_H + ty + (ny - cy) * CONTENT_H * scale,
+  });
+  const pinFade = at(frame, fps, 1.4, 2.5, 1, 0) * at(frame, fps, 0.1, 0.8, 0, 1);
 
   const key = area.length + "-" + paths.length;
   const maskId = `sel-${key}`;
@@ -214,6 +222,77 @@ export const SatelliteMap: React.FC<{
           ))}
         </svg>
       </div>
+
+      {/* landmark pins over the establishing shot, clearing as we move in */}
+      {pinFade > 0.004 ? (
+        <AbsoluteFill style={{ opacity: pinFade }}>
+          <svg width={W} height={H} style={{ position: "absolute" }}>
+            {(() => {
+              const c = project(PAD_X + 0.497 * SCALE_X, PAD_Y + 0.44 * SCALE_Y);
+              const r = 0.47 * CONTENT_W * scale * SCALE_X;
+              return (
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={r}
+                  fill="none"
+                  stroke={theme.gold}
+                  strokeWidth={1}
+                  strokeDasharray="5 7"
+                  opacity={0.45}
+                />
+              );
+            })()}
+            {PINS.map((p) => {
+              const a = project(PAD_X + p.at[0] * SCALE_X, PAD_Y + p.at[1] * SCALE_Y);
+              const dx = p.side === "left" ? -70 : p.side === "right" ? 70 : 0;
+              const dy = p.side === "above" ? -66 : p.side === "left" ? -34 : -28;
+              return (
+                <g key={p.label}>
+                  <line
+                    x1={a.x}
+                    y1={a.y}
+                    x2={a.x + dx}
+                    y2={a.y + dy}
+                    stroke={theme.gold}
+                    strokeWidth={1}
+                    strokeDasharray="4 5"
+                    opacity={0.8}
+                  />
+                  <circle cx={a.x} cy={a.y} r={5} fill={theme.gold} />
+                </g>
+              );
+            })}
+          </svg>
+          {PINS.map((p) => {
+            const a = project(PAD_X + p.at[0] * SCALE_X, PAD_Y + p.at[1] * SCALE_Y);
+            const dx = p.side === "left" ? -78 : p.side === "right" ? 78 : 0;
+            const dy = p.side === "above" ? -70 : p.side === "left" ? -38 : -32;
+            return (
+              <div
+                key={p.label}
+                style={{
+                  position: "absolute",
+                  left: a.x + dx - (p.side === "left" ? 156 : 0),
+                  top: a.y + dy - 18,
+                  width: p.side === "above" ? 200 : 156,
+                  marginLeft: p.side === "above" ? -100 : 0,
+                  textAlign:
+                    p.side === "left" ? "right" : p.side === "right" ? "left" : "center",
+                  fontFamily: theme.text,
+                  fontSize: 14,
+                  letterSpacing: 2,
+                  lineHeight: 1.3,
+                  whiteSpace: "pre-line",
+                  color: theme.light,
+                }}
+              >
+                {p.label}
+              </div>
+            );
+          })}
+        </AbsoluteFill>
+      ) : null}
 
       {/* the lens: a soft brightening that gathers on the area as we move in */}
       <AbsoluteFill

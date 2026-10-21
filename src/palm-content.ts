@@ -16,17 +16,43 @@ export type Carousel = {
   prevArea?: Ring[];
 };
 
-export const MASTHEAD = "Palm Jumeirah";
+export const MASTHEAD = "PALM JUMEIRAH";
+export const SUBHEAD = "DUBAI, UAE";
 export const STEPS = ["Trunk", "Fronds", "Crescent"] as const;
+
+/**
+ * Landmark pins over the establishing shot, in coordinates normalised against
+ * the ORIGINAL satellite image. Positions are read off the island by eye:
+ * Atlantis, the Crescent, the Fronds, the Trunk and Nakheel Mall are
+ * confident; The Pointe and Palm West Beach are placed as the template draws
+ * them and are worth checking.
+ */
+export type Pin = {
+  label: string;
+  at: [number, number];
+  /** Where the label sits relative to the pin. */
+  side: "left" | "right" | "above";
+};
+
+export const PINS: Pin[] = [
+  { label: "ATLANTIS\nTHE PALM", at: [0.497, 0.052], side: "above" },
+  { label: "THE CRESCENT", at: [0.213, 0.252], side: "left" },
+  { label: "THE POINTE", at: [0.792, 0.330], side: "right" },
+  { label: "THE FRONDS", at: [0.330, 0.405], side: "left" },
+  { label: "NAKHEEL MALL", at: [0.556, 0.600], side: "right" },
+  { label: "PALM\nWEST BEACH", at: [0.163, 0.610], side: "left" },
+  { label: "THE TRUNK", at: [0.520, 0.730], side: "right" },
+];
 
 /** Every area outlined at once, for the opening beat. */
 export const WHOLE_ISLAND: Ring[] = [...trunk, ...fronds, ...crescent];
 
 export const theme = {
   /** Sampled from the approved artwork. */
-  light: "#F8F3E7",
-  body: "#D7D8D3",
-  gold: "#B0A381",
+  light: "#F7F3EA",
+  body: "#CFD3D2",
+  gold: "#F0CE9A",
+  goldDim: "#B79A6B",
   /**
    * Area highlight. Red rather than gold: gold sat too close to the sand and
    * the warm light in the satellite image to read clearly.

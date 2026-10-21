@@ -21,15 +21,31 @@ export const AreaInformation: React.FC<{
 
   return (
     <>
+      {/* a short upright tick, as the template has above its closing line */}
+      <div
+        style={{
+          position: "absolute",
+          left: W / 2,
+          top: 858,
+          width: 1,
+          height: 26,
+          backgroundColor: theme.goldDim,
+          opacity: at(frame, fps, 4.4, 5.0, 0, 0.9),
+        }}
+      />
+
       {/* 4.5 - 5.2s */}
       <div
         style={{
           position: "absolute",
-          left: MARGIN,
-          top: 884,
+          left: 0,
+          top: 898,
+          width: W,
+          textAlign: "center",
           fontFamily: theme.display,
-          fontSize: 78,
+          fontSize: 62,
           lineHeight: 1,
+          letterSpacing: 2,
           color: theme.light,
           ...rise(frame, fps, 4.5, 0.7, 22),
         }}
@@ -39,11 +55,13 @@ export const AreaInformation: React.FC<{
       <div
         style={{
           position: "absolute",
-          left: MARGIN,
-          top: 1006,
+          left: 0,
+          top: 982,
+          width: W,
+          textAlign: "center",
           fontFamily: theme.text,
-          fontSize: 15,
-          letterSpacing: 3.6,
+          fontSize: 16,
+          letterSpacing: 5,
           color: theme.gold,
           ...rise(frame, fps, 4.8, 0.6, 16),
         }}
@@ -53,12 +71,11 @@ export const AreaInformation: React.FC<{
       <div
         style={{
           position: "absolute",
-          left: MARGIN,
-          top: 1052,
+          left: W / 2 - at(frame, fps, 5.0, 5.8, 0, 62),
+          top: 1022,
           height: 1,
-          backgroundColor: theme.gold,
-          opacity: 0.55,
-          width: at(frame, fps, 5.0, 5.9, 0, W - MARGIN * 2),
+          backgroundColor: theme.goldDim,
+          width: at(frame, fps, 5.0, 5.8, 0, 124),
         }}
       />
 
@@ -70,7 +87,7 @@ export const AreaInformation: React.FC<{
               style={{
                 position: "absolute",
                 left: DIVIDER_X,
-                top: 1078,
+                top: 1064,
                 width: 1,
                 backgroundColor: theme.gold,
                 opacity: 0.4,
@@ -82,7 +99,7 @@ export const AreaInformation: React.FC<{
             style={{
               position: "absolute",
               left: COL_X[i],
-              top: 1076,
+              top: 1062,
               width: COL_W[i],
             }}
           >
