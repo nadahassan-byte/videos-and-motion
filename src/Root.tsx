@@ -4,7 +4,7 @@ import { auraGardens, auraRidge, slideSchema } from "./slides";
 import { PalmSlide } from "./PalmSlide";
 import { CRESCENT, FRONDS, TRUNK } from "./palm-content";
 
-const palm = { durationInFrames: 270, fps: 30, width: 1080, height: 1620 } as const;
+const palm = { durationInFrames: 270, fps: 30, width: 1080, height: 1350 } as const;
 
 export const RemotionRoot: React.FC = () => {
   return (

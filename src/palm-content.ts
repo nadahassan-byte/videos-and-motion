@@ -1,18 +1,16 @@
 import type { Ring } from "./palm-geo";
 import { crescent, fronds, trunk } from "./palm-geo";
 
-/** One of the icon-led blocks down the left column. */
+/** One column: a gold pin, a serif title, a bedroom range and a paragraph. */
 export type Block = {
   title: string;
-  /** Small caps line under the title, e.g. "STUDIOS – 3 BEDROOMS". */
   range?: string;
   body: string;
 };
 
 export type Carousel = {
-  areaName: [string, string];
-  subtitle: string;
-  intro: string;
+  /** Area name under the photo, e.g. "The Trunk". */
+  areaName: string;
   blocks: Block[];
   area: Ring[];
   /** Overrides the auto-computed camera push when set. */
@@ -25,32 +23,33 @@ export type Carousel = {
   prevArea?: Ring[];
 };
 
+export const MASTHEAD = "Palm Jumeirah";
+
 export const theme = {
   /** Sampled from the approved template. */
-  bg: "#F2E9DC",
-  ink: "#111111",
-  body: "#56514A",
-  rule: "#C6BCAC",
-  circle: "#DDCEB8",
-  gold: "#E0B472",
-  glow: "#FCCE8B",
-  sans: '"Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif',
+  bg: "#EBE2D3",
+  ink: "#14130F",
+  body: "#4A443B",
+  maroon: "#5D181D",
+  gold: "#8F6226",
+  rule: "#C7BBA6",
+  /** Highlight on the map. */
+  hi: "#E8C07A",
+  display: '"Didot", "Bodoni 72", "Playfair Display", Georgia, "Liberation Serif", serif',
+  text: 'Georgia, "Liberation Serif", "Times New Roman", serif',
 } as const;
 
 /** Copy taken verbatim from the supplied template artwork. */
 export const TRUNK: Carousel = {
-  areaName: ["The", "Trunk"],
-  subtitle: "APARTMENTS & PENTHOUSES",
-  intro:
-    "The Trunk serves as the central artery of Palm Jumeirah and is primarily dedicated to mid-rise to high-rise residential buildings.",
+  areaName: "The Trunk",
   blocks: [
     {
-      title: "WATERFRONT\nAPARTMENTS",
+      title: "Waterfront Apartments",
       range: "STUDIOS – 3 BEDROOMS",
       body: "A mix of contemporary residences across developments such as Shoreline Apartments, Golden Mile, Oceana and Tiara.",
     },
     {
-      title: "PENTHOUSES\n& DUPLEXES",
+      title: "Penthouses & Duplexes",
       range: "4 BEDROOMS",
       body: "Spacious residences offering generous layouts, elevated views and access to the island's lifestyle amenities.",
     },
@@ -60,21 +59,21 @@ export const TRUNK: Carousel = {
 
 /** Copy taken verbatim from the written brief. */
 export const FRONDS: Carousel = {
-  areaName: ["The", "Fronds"],
-  subtitle: "VILLAS & MANSIONS",
-  intro:
-    "Private beachfront villas across 16 gated residential fronds, comprising Garden Homes, Signature Villas and custom-built mansions.",
+  areaName: "The Fronds",
   blocks: [
     {
-      title: "GARDEN HOMES",
+      title: "Garden Homes",
+      range: "4–5 BEDROOMS",
       body: "4–5-bedroom villas with private gardens and swimming pools.",
     },
     {
-      title: "SIGNATURE VILLAS",
+      title: "Signature Villas",
+      range: "5–7 BEDROOMS",
       body: "5–7-bedroom luxury villas on larger waterfront plots.",
     },
     {
-      title: "CUSTOM MANSIONS",
+      title: "Custom Mansions",
+      range: "6+ BEDROOMS",
       body: "Typically 6+ bedrooms, including bespoke residences on prime frond locations.",
     },
   ],
@@ -84,17 +83,16 @@ export const FRONDS: Carousel = {
 
 /** Copy taken verbatim from the written brief. */
 export const CRESCENT: Carousel = {
-  areaName: ["The", "Crescent"],
-  subtitle: "BRANDED RESIDENCES",
-  intro:
-    "Ultra-luxury branded residences, resort apartments, penthouses, sky villas and select beachfront mansions. Notable residences include Atlantis The Royal Residences and XXI Carat.",
+  areaName: "The Crescent",
   blocks: [
     {
-      title: "BRANDED APARTMENTS",
+      title: "Branded Apartments",
+      range: "2–4 BEDROOMS",
       body: "Typically 2–4 bedrooms with access to luxury resort amenities.",
     },
     {
-      title: "PENTHOUSES\n& SKY VILLAS",
+      title: "Penthouses & Sky Villas",
+      range: "4–6+ BEDROOMS",
       body: "Typically 4–6+ bedrooms, featuring expansive layouts and panoramic sea views.",
     },
   ],

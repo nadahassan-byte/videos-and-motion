@@ -9,52 +9,43 @@ import {
   useVideoConfig,
 } from "remotion";
 import type { Block, Carousel } from "./palm-content";
-import { theme } from "./palm-content";
+import { MASTHEAD, theme } from "./palm-content";
 import type { Ring } from "./palm-geo";
 
-/* ---------- layout (1080 x 1620) ----------
- * Positions measured off the supplied template (1024x1536) and scaled by
- * 1080/1024 = 1.0547, so the composition matches it rather than approximating.
+/* ---------- layout (1080 x 1350) ----------
+ * Positions measured off the supplied template (1122x1402) and scaled by
+ * 1080/1122 = 0.9626.
  */
-const RULE_X = 47;
-const COL_X = 109;
-const COL_W = 372;
-const MAP_X = 356;
-const MAP_W = 1080 - MAP_X;
-const H = 1620;
+const W = 1080;
+const H = 1350;
+const MARGIN = 77;
 
-const HEAD_TOP = 153;
+const HEAD_TOP = 88;
 const HEAD_SIZE = 132;
-const HEAD_LEADING = 103;
-const SUB_TOP = 379;
-const SUB_SIZE = 20;
-const DIV_TOP = 424;
-const INTRO_TOP = 466;
-/*
- * The aerial is wide and short; this column is tall and narrow. Filling the
- * column would crop the island down to a strip, so the map is laid in at a
- * size where the whole island reads, and the column fades it into the cream
- * at top and bottom instead.
- */
-const CONTENT_W = 1160;
-const CONTENT_H = H;
 
-/*
- * The map is served widened (public/masterplan-wide.jpg): the source is
- * 1499x1049, extended with mirrored, blurred sea to 1907x1049. Geometry in
- * palm-geo.ts is normalised against the ORIGINAL image, so ring x-coordinates
- * are remapped into the widened frame here.
- */
+const BAND_T0 = 358; // photo band, left edge of the top curve
+const BAND_T1 = 250; // right edge of the top curve
+const BAND_B0 = 810; // left edge of the bottom curve
+const BAND_B1 = 945; // right edge of the bottom curve
+
+const AREA_TOP = 862;
+const AREA_SIZE = 104;
+const HAIRLINE_Y = 1016;
+const PIN_Y = 1058;
+const PIN_D = 11;
+
+/* The widened map image: 1499x1049 source, extended with mirrored, blurred
+ * sea to 1907x1049. Geometry is normalised against the ORIGINAL, so ring
+ * x-coordinates are remapped into the widened frame here. */
 const IMG_W = 1907;
-const IMG_H = 2663;
+const IMG_H = 1049;
 const PAD_X = 0.106974;
 const SCALE_X = 0.786051;
-const PAD_Y = 0.303042;
-const SCALE_Y = 0.393917;
 const wide = (rings: Ring[] | undefined): Ring[] | undefined =>
-  rings?.map((r) =>
-    r.map(([x, y]) => [PAD_X + x * SCALE_X, PAD_Y + y * SCALE_Y] as [number, number]),
-  );
+  rings?.map((r) => r.map(([x, y]) => [PAD_X + x * SCALE_X, y] as [number, number]));
+
+const CONTENT_W = 1400;
+const CONTENT_H = Math.round(CONTENT_W / (IMG_W / IMG_H));
 
 const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 const ease = (frame: number, from: number, to: number, a: number, b: number) =>
@@ -72,7 +63,6 @@ const toPath = (ring: Ring) =>
     )
     .join(" ") + "Z";
 
-/** Where the camera sits to frame a set of rings: centre point and zoom. */
 const cameraFor = (rings: Ring[] | undefined, zoom?: number) => {
   if (!rings || rings.length === 0) return { cx: 0.5, cy: 0.5, scale: 1 };
   const xs = rings.flat().map((p) => p[0]);
@@ -82,31 +72,22 @@ const cameraFor = (rings: Ring[] | undefined, zoom?: number) => {
   const y0 = Math.min(...ys);
   const y1 = Math.max(...ys);
   const scale =
-    zoom ?? Math.min(Math.max(Math.min(0.62 / (x1 - x0), 0.62 / (y1 - y0)), 1.05), 1.4);
+    zoom ?? Math.min(Math.max(Math.min(0.68 / (x1 - x0), 0.68 / (y1 - y0)), 1.04), 1.45);
   return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, scale };
 };
 
-/** Line-art tower, as in the template's circular badges. */
-const TowerIcon: React.FC<{ size: number }> = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-    <rect x="9" y="11" width="13" height="22" stroke={theme.ink} strokeWidth="1.4" />
-    <rect x="22" y="17" width="9" height="16" stroke={theme.ink} strokeWidth="1.4" />
-    {[15, 20, 25].map((y) => (
-      <React.Fragment key={y}>
-        <line x1="12" y1={y} x2="15" y2={y} stroke={theme.ink} strokeWidth="1.2" />
-        <line x1="17" y1={y} x2="20" y2={y} stroke={theme.ink} strokeWidth="1.2" />
-      </React.Fragment>
-    ))}
-    {[21, 26].map((y) => (
-      <line key={y} x1="25" y1={y} x2="28" y2={y} stroke={theme.ink} strokeWidth="1.2" />
-    ))}
-  </svg>
-);
+/**
+ * The photo band: a curve sweeping up from the left along the top, down the
+ * right edge, then a second curve back along the bottom.
+ */
+const BAND_PATH =
+  `M0 ${BAND_T0} ` +
+  `Q ${W * 0.34} 214 ${W} ${BAND_T1} ` +
+  `L ${W} ${BAND_B1} ` +
+  `Q ${W * 0.46} ${BAND_B0 - 6} 0 ${BAND_B0} Z`;
 
 export const PalmSlide: React.FC<Carousel> = ({
   areaName,
-  subtitle,
-  intro,
   blocks,
   area,
   zoom,
@@ -118,93 +99,126 @@ export const PalmSlide: React.FC<Carousel> = ({
 
   const from = cameraFor(wide(prevArea));
   const to = cameraFor(wide(area), zoom);
-
   const scale = ease(frame, s(1), s(2.5), from.scale, to.scale);
   const cx = ease(frame, s(1), s(2.5), from.cx, to.cx);
   const cy = ease(frame, s(1), s(2.5), from.cy, to.cy);
-
   const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
-  const tx = clamp(
-    (0.5 - cx) * CONTENT_W,
-    Math.max(0, (CONTENT_W * scale - MAP_W) / 2),
-  );
+  const tx = clamp((0.5 - cx) * CONTENT_W, Math.max(0, (CONTENT_W * scale - W) / 2));
   const ty = (0.5 - cy) * CONTENT_H;
 
   const prevPaths = (wide(prevArea) ?? []).map(toPath);
   const prevFade = ease(frame, s(0.4), s(1.5), 1, 0);
-
   const draw = ease(frame, s(2.5), s(3.7), 1, 0);
-  const fill = ease(frame, s(3.7), s(4.5), 0, 0.42);
+  const fill = ease(frame, s(3.7), s(4.5), 0, 0.4);
   const dim = ease(frame, s(3.7), s(4.5), 0, 0.5);
-
   const paths = (wide(area) as Ring[]).map(toPath);
-  const maskId = `keep-${areaName.join("")}`;
-  const prevMaskId = `keep-prev-${areaName.join("")}`;
+  const maskId = `keep-${areaName.replace(/\s+/g, "")}`;
+  const prevMaskId = `keep-prev-${areaName.replace(/\s+/g, "")}`;
 
-  const rise = (at: number) => ({
-    opacity: ease(frame, s(at), s(at + 0.32), 0, 1),
-    translate: `0px ${ease(frame, s(at), s(at + 0.38), 20, 0)}px`,
+  const rise = (at: number, dur = 0.26, dist = 14) => ({
+    opacity: ease(frame, s(at), s(at + dur), 0, 1),
+    translate: `0px ${ease(frame, s(at), s(at + dur + 0.04), dist, 0)}px`,
   });
 
-  // Icon centres measured off the template: 657 and 993 for two blocks.
-  // Three blocks start a little higher and sit closer together.
-  const tight = blocks.length > 2;
-  const iconD = tight ? 66 : 75;
-  const blockTops = tight ? [600, 932, 1264] : [657, 993];
+  /* Columns: the pin lands first, then the words follow straight after. */
+  const COLS = blocks.length;
+  const gutter = 34;
+  const colW = (W - MARGIN * 2 - gutter * (COLS - 1)) / COLS;
+  const colX = (i: number) => MARGIN + i * (colW + gutter);
+  const PIN_AT = (i: number) => 4.0 + i * 0.3;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: theme.bg, fontFamily: theme.sans }}>
-      {/* soft palm shadow falling across the top-left, as in the template */}
-      <svg width={1080} height={H} style={{ position: "absolute" }}>
+    <AbsoluteFill style={{ backgroundColor: theme.bg }}>
+      {/* soft palm shadows, top-right and bottom-right */}
+      <svg width={W} height={H} style={{ position: "absolute" }}>
         <defs>
-          <filter id="soften">
-            <feGaussianBlur stdDeviation="9" />
+          <filter id="blur18">
+            <feGaussianBlur stdDeviation="16" />
           </filter>
+          <clipPath id="band">
+            <path d={BAND_PATH} />
+          </clipPath>
         </defs>
-        <g filter="url(#soften)" opacity={0.12}>
-          {[-28, -8, 12, 34, 58, 84].map((a, i) => (
+        <g filter="url(#blur18)" opacity={0.1}>
+          {[0, 24, 48, 72, 96].map((a, i) => (
             <path
-              key={i}
-              d={`M-40 -30 Q ${120 + i * 26} ${40 + i * 18} ${250 + i * 34} ${
-                150 + i * 46
-              } Q ${110 + i * 22} ${60 + i * 20} -40 -30 Z`}
+              key={`a${i}`}
+              d={`M1140 -40 Q ${900 - i * 40} ${80 + i * 26} ${760 - i * 58} ${
+                200 + i * 40
+              } Q ${920 - i * 30} ${90 + i * 20} 1140 -40 Z`}
               fill={theme.ink}
-              transform={`rotate(${a} -40 -30)`}
+              transform={`rotate(${a} 1140 -40)`}
+            />
+          ))}
+          {[0, 30, 60].map((a, i) => (
+            <path
+              key={`b${i}`}
+              d={`M1150 1420 Q ${900 - i * 40} ${1300 - i * 26} ${790 - i * 54} ${
+                1180 - i * 36
+              } Q ${930 - i * 30} ${1300 - i * 18} 1150 1420 Z`}
+              fill={theme.ink}
+              transform={`rotate(${a} 1150 1420)`}
             />
           ))}
         </g>
-        <line
-          x1={RULE_X}
-          y1={120}
-          x2={RULE_X}
-          y2={1486}
-          stroke={theme.ink}
-          strokeWidth={1}
-          opacity={0.35}
-        />
       </svg>
 
-      {/* map: bleeds off the right and bottom, fading in from the cream */}
+      {/* masthead */}
       <div
         style={{
           position: "absolute",
-          left: MAP_X,
-          top: 0,
-          width: MAP_W,
-          height: H,
-          overflow: "hidden",
-          maskImage:
-            "linear-gradient(to right, transparent 0px, black 210px, black 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent 0px, black 210px, black 100%)",
+          left: MARGIN,
+          top: HEAD_TOP,
+          width: W - MARGIN * 2,
+          fontFamily: theme.display,
+          fontSize: HEAD_SIZE,
+          lineHeight: 1,
+          letterSpacing: -1,
+          color: theme.ink,
+          ...rise(0, 0.5, 16),
         }}
       >
-        <div style={{ position: "absolute", inset: 0 }}>
+        {MASTHEAD}
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: MARGIN,
+          top: 250,
+          height: 3,
+          backgroundColor: theme.maroon,
+          width: ease(frame, s(0.4), s(1.0), 0, 168),
+        }}
+      />
+
+      {/* maroon inlay following the band's lower curve */}
+      <svg width={W} height={H} style={{ position: "absolute" }}>
+        <path
+          d={
+            `M0 ${BAND_B0} ` +
+            `Q ${W * 0.46} ${BAND_B0 - 6} ${W} ${BAND_B1} ` +
+            `L ${W} ${BAND_B1 + 74} ` +
+            `Q ${W * 0.46} ${BAND_B0 + 36} 0 ${BAND_B0 + 8} Z`
+          }
+          fill={theme.maroon}
+        />
+      </svg>
+
+      {/* photo band */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          clipPath: `path('${BAND_PATH}')`,
+          WebkitClipPath: `path('${BAND_PATH}')`,
+          backgroundColor: "#16202A",
+        }}
+      >
         <div
           style={{
             position: "absolute",
-            left: (MAP_W - CONTENT_W) / 2,
-            top: (H - CONTENT_H) / 2,
+            left: (W - CONTENT_W) / 2,
+            top: (BAND_T0 + BAND_B1) / 2 - CONTENT_H / 2,
             width: CONTENT_W,
             height: CONTENT_H,
             transformOrigin: `${cx * 100}% ${cy * 100}%`,
@@ -213,15 +227,14 @@ export const PalmSlide: React.FC<Carousel> = ({
           }}
         >
           <CanvasImage
-            src={staticFile("masterplan-tall.jpg")}
+            src={staticFile("masterplan-wide.jpg")}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              filter: "saturate(0.86) contrast(1.05) brightness(1.02)",
+              filter: "saturate(0.9) contrast(1.04) brightness(1.0)",
             }}
           />
-
           <svg
             viewBox={`0 0 ${IMG_W} ${IMG_H}`}
             preserveAspectRatio="none"
@@ -243,207 +256,182 @@ export const PalmSlide: React.FC<Carousel> = ({
                 </mask>
               ) : null}
             </defs>
-
             {prevPaths.length ? (
               <g opacity={prevFade}>
                 <rect
                   width={IMG_W}
                   height={IMG_H}
-                  fill="#2A2115"
+                  fill="#1C1510"
                   opacity={0.5}
                   mask={`url(#${prevMaskId})`}
                 />
                 {prevPaths.map((d, i) => (
-                  <path key={`pf${i}`} d={d} fill={theme.gold} opacity={0.42} />
+                  <path key={`pf${i}`} d={d} fill={theme.hi} opacity={0.4} />
                 ))}
                 {prevPaths.map((d, i) => (
                   <path
                     key={`ps${i}`}
                     d={d}
                     fill="none"
-                    stroke={theme.glow}
+                    stroke={theme.hi}
                     strokeWidth={2.4 / scale}
                     strokeLinejoin="round"
-                    style={{
-                      filter: `drop-shadow(0 0 ${3 / scale}px ${theme.glow})`,
-                    }}
+                    style={{ filter: `drop-shadow(0 0 ${3 / scale}px ${theme.hi})` }}
                   />
                 ))}
               </g>
             ) : null}
-
             <rect
               width={IMG_W}
               height={IMG_H}
-              fill="#2A2115"
+              fill="#1C1510"
               opacity={dim}
               mask={`url(#${maskId})`}
             />
-
             {paths.map((d, i) => (
-              <path key={`f${i}`} d={d} fill={theme.gold} opacity={fill} />
+              <path key={`f${i}`} d={d} fill={theme.hi} opacity={fill} />
             ))}
-
             {paths.map((d, i) => (
               <path
                 key={`s${i}`}
                 d={d}
                 fill="none"
-                stroke={theme.glow}
+                stroke={theme.hi}
                 strokeWidth={2.4 / scale}
                 strokeLinejoin="round"
                 pathLength={1}
                 style={{
                   strokeDasharray: 1,
-                  strokeDashoffset: Math.max(
-                    0,
-                    Math.min(1, draw * (1 + (i % 4) * 0.12)),
-                  ),
-                  filter: `drop-shadow(0 0 ${3 / scale}px ${theme.glow})`,
+                  strokeDashoffset: Math.max(0, Math.min(1, draw * (1 + (i % 4) * 0.12))),
+                  filter: `drop-shadow(0 0 ${3 / scale}px ${theme.hi})`,
                 }}
               />
             ))}
           </svg>
         </div>
-        </div>
       </div>
 
-      {/* thin arc sweeping across the map, as in the template */}
-      <svg width={1080} height={H} style={{ position: "absolute", pointerEvents: "none" }}>
-        <circle
-          cx={742}
-          cy={880}
-          r={690}
-          fill="none"
-          stroke={theme.ink}
-          strokeWidth={1}
-          opacity={0.22}
-        />
-      </svg>
-
-      {/* left column - every position measured off the template */}
+      {/* area name */}
       <div
         style={{
           position: "absolute",
-          left: COL_X,
-          top: HEAD_TOP,
-          width: 520,
-          fontSize: HEAD_SIZE,
-          fontWeight: 900,
-          lineHeight: HEAD_LEADING / HEAD_SIZE,
-          letterSpacing: -3.4,
+          left: MARGIN,
+          top: AREA_TOP,
+          fontFamily: theme.display,
+          fontSize: AREA_SIZE,
+          lineHeight: 1,
           color: theme.ink,
-          ...rise(0),
+          ...rise(3.4, 0.4, 14),
         }}
       >
-        {areaName[0]}
-        <br />
-        {areaName[1]}
+        {areaName}
       </div>
-
       <div
         style={{
           position: "absolute",
-          left: COL_X,
-          top: SUB_TOP,
-          fontSize: SUB_SIZE,
-          fontWeight: 600,
-          letterSpacing: 6,
-          color: theme.ink,
-          ...rise(0.3),
+          left: MARGIN,
+          top: 971,
+          height: 3,
+          backgroundColor: theme.maroon,
+          width: ease(frame, s(3.7), s(4.1), 0, 101),
         }}
-      >
-        {subtitle}
-      </div>
-
+      />
       <div
         style={{
           position: "absolute",
-          left: COL_X,
-          top: DIV_TOP,
+          left: MARGIN,
+          top: HAIRLINE_Y,
           height: 1,
           backgroundColor: theme.rule,
-          width: ease(frame, s(0.55), s(1.15), 0, 74),
+          width: ease(frame, s(3.8), s(4.5), 0, W - MARGIN * 2),
         }}
       />
 
-      <div
-        style={{
-          position: "absolute",
-          left: COL_X,
-          top: INTRO_TOP,
-          width: COL_W,
-          fontSize: 19.5,
-          lineHeight: 1.62,
-          color: theme.body,
-          ...rise(0.7),
-        }}
-      >
-        {intro}
-      </div>
-
-      {blocks.map((b: Block, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            left: COL_X,
-            top: blockTops[i],
-            width: COL_W,
-            ...rise(4.0 + i * 0.3),
-          }}
-        >
-          <div
-            style={{
-              width: iconD,
-              height: iconD,
-              borderRadius: 999,
-              backgroundColor: theme.circle,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <TowerIcon size={iconD * 0.56} />
-          </div>
-          <div
-            style={{
-              marginTop: 26,
-              fontSize: 25,
-              fontWeight: 700,
-              letterSpacing: 2.6,
-              lineHeight: 1.3,
-              color: theme.ink,
-              whiteSpace: "pre-line",
-            }}
-          >
-            {b.title}
-          </div>
-          {b.range ? (
+      {/* columns */}
+      {blocks.map((b: Block, i) => {
+        const at = PIN_AT(i);
+        return (
+          <React.Fragment key={i}>
+            {/* the vertical hairline, drawn down from the pin */}
             <div
               style={{
-                marginTop: 11,
-                fontSize: 15,
-                letterSpacing: 2.6,
-                color: theme.body,
+                position: "absolute",
+                left: colX(i),
+                top: PIN_Y,
+                width: 1,
+                backgroundColor: theme.rule,
+                height: ease(frame, s(at + 0.1), s(at + 0.45), 0, 212),
+              }}
+            />
+            {/* the pin lands first */}
+            <div
+              style={{
+                position: "absolute",
+                left: colX(i) - PIN_D / 2,
+                top: PIN_Y - PIN_D / 2,
+                width: PIN_D,
+                height: PIN_D,
+                borderRadius: 999,
+                backgroundColor: theme.gold,
+                opacity: ease(frame, s(at), s(at + 0.1), 0, 1),
+                scale: interpolate(
+                  frame,
+                  [s(at), s(at + 0.16), s(at + 0.28)],
+                  [0, 1.5, 1],
+                  { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE },
+                ),
+              }}
+            />
+            {/* then the words, quickly */}
+            <div
+              style={{
+                position: "absolute",
+                left: colX(i) + 39,
+                top: PIN_Y - 18,
+                width: colW - 39,
               }}
             >
-              {b.range}
+              <div
+                style={{
+                  fontFamily: theme.display,
+                  fontSize: COLS > 2 ? 30 : 35,
+                  lineHeight: 1.12,
+                  color: theme.ink,
+                  ...rise(at + 0.18, 0.2, 10),
+                }}
+              >
+                {b.title}
+              </div>
+              {b.range ? (
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontFamily: theme.text,
+                    fontSize: COLS > 2 ? 14 : 15.5,
+                    letterSpacing: 3,
+                    color: theme.maroon,
+                    ...rise(at + 0.28, 0.2, 10),
+                  }}
+                >
+                  {b.range}
+                </div>
+              ) : null}
+              <div
+                style={{
+                  marginTop: 20,
+                  fontFamily: theme.text,
+                  fontSize: COLS > 2 ? 18 : 20,
+                  lineHeight: 1.55,
+                  color: theme.body,
+                  ...rise(at + 0.36, 0.22, 10),
+                }}
+              >
+                {b.body}
+              </div>
             </div>
-          ) : null}
-          <div
-            style={{
-              marginTop: 14,
-              fontSize: 19,
-              lineHeight: 1.6,
-              color: theme.body,
-            }}
-          >
-            {b.body}
-          </div>
-        </div>
-      ))}
-
+          </React.Fragment>
+        );
+      })}
     </AbsoluteFill>
   );
 };
