@@ -89,10 +89,10 @@ export const PalmSlide: React.FC<Carousel> = ({
   const paths = area.map(toPath);
   const maskId = `keep-${areaName.replace(/\s+/g, "")}`;
 
-  /** Content blocks rise and fade, one after another. */
+  /** Content blocks rise and fade, one after another - short and snappy. */
   const reveal = (at: number) => ({
-    opacity: ease(frame, s(at), s(at + 0.55), 0, 1),
-    translate: `0px ${ease(frame, s(at), s(at + 0.6), 22, 0)}px`,
+    opacity: ease(frame, s(at), s(at + 0.3), 0, 1),
+    translate: `0px ${ease(frame, s(at), s(at + 0.34), 18, 0)}px`,
   });
 
   return (
@@ -255,11 +255,11 @@ export const PalmSlide: React.FC<Carousel> = ({
           overflow: "hidden",
         }}
       >
-        <div style={{ fontSize: 38, fontWeight: 700, lineHeight: 1.1, ...reveal(4.5) }}>
+        <div style={{ fontSize: 38, fontWeight: 700, lineHeight: 1.1, ...reveal(4.0) }}>
           {areaName}
         </div>
 
-        <div style={reveal(4.9)}>
+        <div style={reveal(4.22)}>
           <div style={sectionLabel}>Property Types</div>
           {propertyTypes.map((p, i) => (
             <div key={i} style={{ ...bodyText, marginTop: i === 0 ? 0 : 6 }}>
@@ -268,7 +268,7 @@ export const PalmSlide: React.FC<Carousel> = ({
           ))}
         </div>
 
-        <div style={{ marginTop: 16, ...reveal(5.3) }}>
+        <div style={{ marginTop: 16, ...reveal(4.44) }}>
           <div style={sectionLabel}>Bedroom Types</div>
           {bedroomTypes.map((b2, i) => (
             <div
