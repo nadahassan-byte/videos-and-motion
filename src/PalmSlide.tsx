@@ -8,36 +8,41 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import type { Bullet, Carousel } from "./palm-content";
+import type { Block, Carousel } from "./palm-content";
 import { theme } from "./palm-content";
 import type { Ring } from "./palm-geo";
 
 /* ---------- layout (1080 x 1350) ---------- */
-const RULE_X = 62;
-const COL_X = 130;
-const MAP_Y = 300;
-const MAP_H = 560;
-const MAP_W = 1080 - RULE_X; // bleeds off the right edge
-const DIVIDER_X = 556;
-const C1_W = 386;
-const C2_X = 600;
-const C2_W = 408;
+const RULE_X = 56;
+const COL_X = 104;
+const COL_W = 360;
+const MAP_X = 372;
+const MAP_W = 1080 - MAP_X;
+/*
+ * The aerial is wide and short; this column is tall and narrow. Filling the
+ * column would crop the island down to a strip, so the map is laid in at a
+ * size where the whole island reads, and the column fades it into the cream
+ * at top and bottom instead.
+ */
+const CONTENT_W = 1140;
+const CONTENT_H = 1350;
 
 /*
  * The map is served widened (public/masterplan-wide.jpg): the source is
- * 1499x1049 but the map area is far wider than that, so the canvas is extended
- * with mirrored sea to 1907x1049 - matching the viewport's aspect exactly, so
- * the whole island is visible at rest instead of being cropped.
- *
- * Geometry in palm-geo.ts is normalised against the ORIGINAL image, so ring
- * x-coordinates are remapped into the widened frame once, here.
+ * 1499x1049, extended with mirrored, blurred sea to 1907x1049. Geometry in
+ * palm-geo.ts is normalised against the ORIGINAL image, so ring x-coordinates
+ * are remapped into the widened frame here.
  */
 const IMG_W = 1907;
-const IMG_H = 1049;
+const IMG_H = 2257;
 const PAD_X = 0.106974;
 const SCALE_X = 0.786051;
+const PAD_Y = 0.267612;
+const SCALE_Y = 0.464776;
 const wide = (rings: Ring[] | undefined): Ring[] | undefined =>
-  rings?.map((r) => r.map(([x, y]) => [PAD_X + x * SCALE_X, y] as [number, number]));
+  rings?.map((r) =>
+    r.map(([x, y]) => [PAD_X + x * SCALE_X, PAD_Y + y * SCALE_Y] as [number, number]),
+  );
 
 const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 const ease = (frame: number, from: number, to: number, a: number, b: number) =>
@@ -65,40 +70,32 @@ const cameraFor = (rings: Ring[] | undefined, zoom?: number) => {
   const y0 = Math.min(...ys);
   const y1 = Math.max(...ys);
   const scale =
-    zoom ?? Math.min(Math.max(Math.min(0.88 / (x1 - x0), 0.88 / (y1 - y0)), 1.05), 4);
+    zoom ?? Math.min(Math.max(Math.min(0.62 / (x1 - x0), 0.62 / (y1 - y0)), 1.05), 1.4);
   return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, scale };
 };
 
-/** Hand-drawn feeling underline, as in the template. */
-const Swoosh: React.FC<{ x: number; y: number; w: number; grow: number }> = ({
-  x,
-  y,
-  w,
-  grow,
-}) => (
-  <svg
-    width={w}
-    height={28}
-    viewBox={`0 0 ${w} 28`}
-    style={{ position: "absolute", left: x, top: y, overflow: "visible" }}
-  >
-    <path
-      d={`M2 6 Q ${w * 0.45} 26 ${w - 2} 9`}
-      fill="none"
-      stroke={theme.red}
-      strokeWidth={5}
-      strokeLinecap="round"
-      pathLength={1}
-      style={{ strokeDasharray: 1, strokeDashoffset: 1 - grow }}
-    />
+/** Line-art tower, as in the template's circular badges. */
+const TowerIcon: React.FC<{ size: number }> = ({ size }) => (
+  <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+    <rect x="9" y="11" width="13" height="22" stroke={theme.ink} strokeWidth="1.4" />
+    <rect x="22" y="17" width="9" height="16" stroke={theme.ink} strokeWidth="1.4" />
+    {[15, 20, 25].map((y) => (
+      <React.Fragment key={y}>
+        <line x1="12" y1={y} x2="15" y2={y} stroke={theme.ink} strokeWidth="1.2" />
+        <line x1="17" y1={y} x2="20" y2={y} stroke={theme.ink} strokeWidth="1.2" />
+      </React.Fragment>
+    ))}
+    {[21, 26].map((y) => (
+      <line key={y} x1="25" y1={y} x2="28" y2={y} stroke={theme.ink} strokeWidth="1.2" />
+    ))}
   </svg>
 );
 
 export const PalmSlide: React.FC<Carousel> = ({
-  tagline,
   areaName,
-  propertyTypes,
-  bedroomTypes,
+  subtitle,
+  intro,
+  blocks,
   area,
   zoom,
   prevArea,
@@ -107,8 +104,6 @@ export const PalmSlide: React.FC<Carousel> = ({
   const { fps } = useVideoConfig();
   const s = (sec: number) => sec * fps;
 
-  // The camera starts where the previous carousel left off - or on the whole
-  // island for the first one - and moves to frame this slide's area.
   const from = cameraFor(wide(prevArea));
   const to = cameraFor(wide(area), zoom);
 
@@ -117,133 +112,100 @@ export const PalmSlide: React.FC<Carousel> = ({
   const cy = ease(frame, s(1), s(2.5), from.cy, to.cy);
 
   const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
-  const tx = clamp((0.5 - cx) * MAP_W, ((scale - 1) * MAP_W) / 2);
-  const ty = clamp((0.5 - cy) * MAP_H, ((scale - 1) * MAP_H) / 2);
+  const tx = clamp(
+    (0.5 - cx) * CONTENT_W,
+    Math.max(0, (CONTENT_W * scale - MAP_W) / 2),
+  );
+  const ty = (0.5 - cy) * CONTENT_H;
 
   const prevPaths = (wide(prevArea) ?? []).map(toPath);
   const prevFade = ease(frame, s(0.4), s(1.5), 1, 0);
 
   const draw = ease(frame, s(2.5), s(3.7), 1, 0);
-  const fill = ease(frame, s(3.7), s(4.5), 0, 0.4);
-  const dim = ease(frame, s(3.7), s(4.5), 0, 0.52);
+  const fill = ease(frame, s(3.7), s(4.5), 0, 0.42);
+  const dim = ease(frame, s(3.7), s(4.5), 0, 0.5);
 
   const paths = (wide(area) as Ring[]).map(toPath);
-  const maskId = `keep-${areaName.replace(/\s+/g, "")}`;
-  const prevMaskId = `keep-prev-${areaName.replace(/\s+/g, "")}`;
+  const maskId = `keep-${areaName.join("")}`;
+  const prevMaskId = `keep-prev-${areaName.join("")}`;
 
-  const reveal = (at: number) => ({
-    opacity: ease(frame, s(at), s(at + 0.3), 0, 1),
-    translate: `0px ${ease(frame, s(at), s(at + 0.34), 18, 0)}px`,
+  const rise = (at: number) => ({
+    opacity: ease(frame, s(at), s(at + 0.32), 0, 1),
+    translate: `0px ${ease(frame, s(at), s(at + 0.38), 20, 0)}px`,
   });
 
-  const para = (b: Bullet, i: number) => (
-    <div key={i} style={{ ...body, marginTop: i === 0 ? 0 : 10 }}>
-      {b.label ? <strong>{b.label}</strong> : null}
-      {b.text}
-    </div>
-  );
+  // Three blocks need to breathe less than two.
+  const tight = blocks.length > 2;
+  const iconD = tight ? 46 : 54;
+  const blockGap = tight ? 30 : 52;
 
   return (
     <AbsoluteFill style={{ backgroundColor: theme.bg, fontFamily: theme.sans }}>
-      {/* left margin rule, with the template's slight hand-drawn waver */}
+      {/* soft palm shadow falling across the top-left, as in the template */}
       <svg width={1080} height={1350} style={{ position: "absolute" }}>
-        <path
-          d="M62 36 C70 120 54 190 62 262 C67 300 59 320 62 344"
-          fill="none"
-          stroke={theme.ink}
-          strokeWidth={1.6}
-          opacity={0.75}
-        />
+        <defs>
+          <filter id="soften">
+            <feGaussianBlur stdDeviation="9" />
+          </filter>
+        </defs>
+        <g filter="url(#soften)" opacity={0.12}>
+          {[-28, -8, 12, 34, 58, 84].map((a, i) => (
+            <path
+              key={i}
+              d={`M-40 -30 Q ${120 + i * 26} ${40 + i * 18} ${250 + i * 34} ${
+                150 + i * 46
+              } Q ${110 + i * 22} ${60 + i * 20} -40 -30 Z`}
+              fill={theme.ink}
+              transform={`rotate(${a} -40 -30)`}
+            />
+          ))}
+        </g>
         <line
-          x1={62}
-          y1={MAP_Y + MAP_H + 36}
-          x2={62}
-          y2={1316}
+          x1={RULE_X}
+          y1={120}
+          x2={RULE_X}
+          y2={1236}
           stroke={theme.ink}
           strokeWidth={1}
-          opacity={0.45}
-        />
-        {/* decorative arc, bottom right */}
-        <circle
-          cx={1142}
-          cy={1432}
-          r={226}
-          fill="none"
-          stroke={theme.red}
-          strokeWidth={7}
-          opacity={0.95}
+          opacity={0.35}
         />
       </svg>
 
-      {/* masthead */}
+      {/* map: bleeds off the right and bottom, fading in from the cream */}
       <div
         style={{
           position: "absolute",
-          left: COL_X,
-          top: 74,
-          fontSize: 92,
-          fontWeight: 900,
-          letterSpacing: -2.6,
-          lineHeight: 0.99,
-          color: theme.ink,
-          opacity: ease(frame, 0, s(0.7), 0, 1),
-        }}
-      >
-        Palm
-        <br />
-        Jumeirah
-      </div>
-
-      {/* tagline */}
-      <div
-        style={{
-          position: "absolute",
-          right: 60,
-          top: 92,
-          textAlign: "right",
-          fontSize: 19,
-          fontWeight: 600,
-          letterSpacing: 3.1,
-          lineHeight: 1.75,
-          color: theme.ink,
-          opacity: ease(frame, s(0.25), s(0.95), 0, 1),
-        }}
-      >
-        {tagline[0]}
-        <br />
-        {tagline[1]}
-      </div>
-      <Swoosh x={812} y={178} w={208} grow={ease(frame, s(0.6), s(1.3), 0, 1)} />
-
-      {/* map, bleeding off the right edge */}
-      <div
-        style={{
-          position: "absolute",
-          left: RULE_X,
-          top: MAP_Y,
+          left: MAP_X,
+          top: 0,
           width: MAP_W,
-          height: MAP_H,
+          height: 1350,
           overflow: "hidden",
-          backgroundColor: theme.ink,
+          maskImage:
+            "linear-gradient(to right, transparent 0px, black 210px, black 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0px, black 210px, black 100%)",
         }}
       >
+        <div style={{ position: "absolute", inset: 0 }}>
         <div
           style={{
-            width: "100%",
-            height: "100%",
-            position: "relative",
+            position: "absolute",
+            left: (MAP_W - CONTENT_W) / 2,
+            top: (1350 - CONTENT_H) / 2,
+            width: CONTENT_W,
+            height: CONTENT_H,
             transformOrigin: `${cx * 100}% ${cy * 100}%`,
             scale,
             translate: `${tx}px ${ty}px`,
           }}
         >
           <CanvasImage
-            src={staticFile("masterplan-wide.jpg")}
+            src={staticFile("masterplan-tall.jpg")}
             style={{
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              filter: "saturate(0.92) contrast(1.06) brightness(0.96)",
+              filter: "saturate(0.86) contrast(1.05) brightness(1.02)",
             }}
           />
 
@@ -269,29 +231,28 @@ export const PalmSlide: React.FC<Carousel> = ({
               ) : null}
             </defs>
 
-            {/* the previous carousel's highlight, carried in and cleared */}
             {prevPaths.length ? (
               <g opacity={prevFade}>
                 <rect
                   width={IMG_W}
                   height={IMG_H}
-                  fill={theme.ink}
-                  opacity={0.6}
+                  fill="#2A2115"
+                  opacity={0.5}
                   mask={`url(#${prevMaskId})`}
                 />
                 {prevPaths.map((d, i) => (
-                  <path key={`pf${i}`} d={d} fill={theme.gold} opacity={0.4} />
+                  <path key={`pf${i}`} d={d} fill={theme.gold} opacity={0.42} />
                 ))}
                 {prevPaths.map((d, i) => (
                   <path
                     key={`ps${i}`}
                     d={d}
                     fill="none"
-                    stroke={theme.gold}
+                    stroke={theme.glow}
                     strokeWidth={2.4 / scale}
                     strokeLinejoin="round"
                     style={{
-                      filter: `drop-shadow(0 0 ${2.5 / scale}px ${theme.gold}B0)`,
+                      filter: `drop-shadow(0 0 ${3 / scale}px ${theme.glow})`,
                     }}
                   />
                 ))}
@@ -301,7 +262,7 @@ export const PalmSlide: React.FC<Carousel> = ({
             <rect
               width={IMG_W}
               height={IMG_H}
-              fill={theme.ink}
+              fill="#2A2115"
               opacity={dim}
               mask={`url(#${maskId})`}
             />
@@ -315,7 +276,7 @@ export const PalmSlide: React.FC<Carousel> = ({
                 key={`s${i}`}
                 d={d}
                 fill="none"
-                stroke={theme.gold}
+                stroke={theme.glow}
                 strokeWidth={2.4 / scale}
                 strokeLinejoin="round"
                 pathLength={1}
@@ -325,74 +286,142 @@ export const PalmSlide: React.FC<Carousel> = ({
                     0,
                     Math.min(1, draw * (1 + (i % 4) * 0.12)),
                   ),
-                  filter: `drop-shadow(0 0 ${2.5 / scale}px ${theme.gold}B0)`,
+                  filter: `drop-shadow(0 0 ${3 / scale}px ${theme.glow})`,
                 }}
               />
             ))}
           </svg>
         </div>
+        </div>
       </div>
 
-      {/* area title */}
-      <div
-        style={{
-          position: "absolute",
-          left: COL_X,
-          top: 898,
-          fontSize: 58,
-          fontWeight: 900,
-          letterSpacing: -1.5,
-          color: theme.ink,
-          ...reveal(4.0),
-        }}
-      >
-        {areaName}
-      </div>
-      <Swoosh x={COL_X} y={972} w={262} grow={ease(frame, s(4.25), s(4.8), 0, 1)} />
+      {/* thin arc sweeping across the map, as in the template */}
+      <svg width={1080} height={1350} style={{ position: "absolute", pointerEvents: "none" }}>
+        <circle
+          cx={726}
+          cy={742}
+          r={602}
+          fill="none"
+          stroke={theme.ink}
+          strokeWidth={1}
+          opacity={0.22}
+        />
+      </svg>
 
-      {/* column divider */}
-      <div
-        style={{
-          position: "absolute",
-          left: DIVIDER_X,
-          top: 1018,
-          width: 1,
-          height: 268,
-          backgroundColor: theme.ink,
-          opacity: ease(frame, s(4.3), s(4.8), 0, 0.28),
-        }}
-      />
+      {/* left column */}
+      <div style={{ position: "absolute", left: COL_X, top: 136, width: COL_W }}>
+        <div
+          style={{
+            fontSize: 84,
+            fontWeight: 900,
+            lineHeight: 0.94,
+            letterSpacing: -2.4,
+            color: theme.ink,
+            ...rise(0),
+          }}
+        >
+          {areaName[0]}
+          <br />
+          {areaName[1]}
+        </div>
 
-      {/* property types */}
-      <div style={{ position: "absolute", left: COL_X, top: 1018, width: C1_W, ...reveal(4.22) }}>
-        <div style={label}>Property Types</div>
-        {propertyTypes.map((p, i) => (
-          <div key={i} style={{ ...body, marginTop: i === 0 ? 0 : 10 }}>
-            {p}
+        <div
+          style={{
+            marginTop: 18,
+            fontSize: 17,
+            fontWeight: 600,
+            letterSpacing: 4.2,
+            color: theme.ink,
+            ...rise(0.3),
+          }}
+        >
+          {subtitle}
+        </div>
+
+        <div
+          style={{
+            marginTop: 26,
+            height: 1,
+            backgroundColor: theme.rule,
+            width: ease(frame, s(0.55), s(1.15), 0, 68),
+          }}
+        />
+
+        <div
+          style={{
+            marginTop: 24,
+            fontSize: 17.5,
+            lineHeight: 1.62,
+            color: theme.body,
+            ...rise(0.7),
+          }}
+        >
+          {intro}
+        </div>
+
+        {blocks.map((b: Block, i) => (
+          <div key={i} style={{ marginTop: blockGap, ...rise(4.0 + i * 0.3) }}>
+            {i > 0 ? (
+              <div
+                style={{
+                  width: 68,
+                  height: 1,
+                  backgroundColor: theme.rule,
+                  marginBottom: blockGap,
+                }}
+              />
+            ) : null}
+            <div
+              style={{
+                width: iconD,
+                height: iconD,
+                borderRadius: 999,
+                backgroundColor: theme.circle,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TowerIcon size={iconD * 0.56} />
+            </div>
+            <div
+              style={{
+                marginTop: 20,
+                fontSize: tight ? 17 : 18,
+                fontWeight: 700,
+                letterSpacing: 2.6,
+                lineHeight: 1.35,
+                color: theme.ink,
+                whiteSpace: "pre-line",
+              }}
+            >
+              {b.title}
+            </div>
+            {b.range ? (
+              <div
+                style={{
+                  marginTop: 9,
+                  fontSize: 13.5,
+                  letterSpacing: 2.4,
+                  color: theme.body,
+                }}
+              >
+                {b.range}
+              </div>
+            ) : null}
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: tight ? 15.5 : 16.5,
+                lineHeight: 1.58,
+                color: theme.body,
+              }}
+            >
+              {b.body}
+            </div>
           </div>
         ))}
       </div>
-
-      {/* bedroom types */}
-      <div style={{ position: "absolute", left: C2_X, top: 1018, width: C2_W, ...reveal(4.44) }}>
-        <div style={label}>Bedroom Types</div>
-        {bedroomTypes.map(para)}
-      </div>
     </AbsoluteFill>
   );
-};
-
-const label: React.CSSProperties = {
-  fontSize: 17,
-  fontWeight: 700,
-  letterSpacing: 2.7,
-  textTransform: "uppercase",
-  color: "#661A1B",
-  marginBottom: 14,
-};
-
-const body: React.CSSProperties = {
-  fontSize: 20,
-  lineHeight: 1.44,
-  color: "#13110D",
 };
