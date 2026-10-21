@@ -1,6 +1,5 @@
 import React from "react";
-import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
-import { at, rise } from "./anim";
+import { AbsoluteFill } from "remotion";
 import { AreaInformation } from "./AreaInformation";
 import { ConnectedTimeline } from "./ConnectedTimeline";
 import { SatelliteMap } from "./SatelliteMap";
@@ -22,9 +21,6 @@ export const PalmSlide: React.FC<Carousel> = ({
   zoom,
   prevArea,
 }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
   return (
     <AbsoluteFill>
       <SatelliteMap area={area} prevArea={prevArea} zoom={zoom} />
@@ -43,7 +39,8 @@ export const PalmSlide: React.FC<Carousel> = ({
         }}
       />
 
-      {/* Header - present from the first frame, settling gently */}
+      {/* Header - fixed. The masthead is the constant across all three
+          slides, so it never animates. */}
       <div
         style={{
           position: "absolute",
@@ -54,7 +51,6 @@ export const PalmSlide: React.FC<Carousel> = ({
           lineHeight: 1,
           letterSpacing: 0.5,
           color: theme.light,
-          ...rise(frame, fps, 0, 0.9, 10),
         }}
       >
         {MASTHEAD}
@@ -65,8 +61,8 @@ export const PalmSlide: React.FC<Carousel> = ({
           left: MARGIN,
           top: 150,
           height: 2,
+          width: 108,
           backgroundColor: theme.gold,
-          width: at(frame, fps, 0.3, 1.2, 0, 108),
         }}
       />
 

@@ -81,8 +81,8 @@ export const SatelliteMap: React.FC<{
 
   const prevFade = at(frame, fps, 0.3, 1.4, 1, 0);
   const draw = at(frame, fps, 2.4, 3.8, 1, 0); // 2.4-3.8s: outline draws
-  const fill = at(frame, fps, 3.8, 4.5, 0, 0.34); // 3.8-4.5s: fill at 34%
-  const dim = at(frame, fps, 3.8, 4.5, 0, 0.22); // others dim by 22%
+  const fill = at(frame, fps, 3.8, 4.5, 0, 0.38);
+  const dim = at(frame, fps, 3.8, 4.5, 0, 0.34);
 
   const key = area.length + "-" + paths.length;
   const maskId = `sel-${key}`;
@@ -90,7 +90,7 @@ export const SatelliteMap: React.FC<{
   // The SVG viewBox is 1907 wide but drawn at CONTENT_W, so convert the
   // brief's pixel widths into viewBox units before dividing by the zoom.
   const PX = IMG_W / CONTENT_W;
-  const stroke = (2.8 * PX) / scale;
+  const stroke = (4 * PX) / scale;
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#06131C", overflow: "hidden" }}>
@@ -147,7 +147,7 @@ export const SatelliteMap: React.FC<{
                   d={d}
                   fill="none"
                   stroke={theme.hi}
-                  strokeWidth={stroke * 0.8}
+                  strokeWidth={stroke * 0.55}
                   strokeLinejoin="round"
                 />
               ))}
@@ -208,7 +208,7 @@ export const SatelliteMap: React.FC<{
                 strokeDasharray: 1,
                 // fronds resolve in a gentle cascade rather than together
                 strokeDashoffset: Math.max(0, Math.min(1, draw * (1 + (i % 5) * 0.1))),
-                filter: `drop-shadow(0 0 ${(5 * PX) / scale}px ${theme.hi}E0)`,
+                filter: `drop-shadow(0 0 ${(5 * PX) / scale}px ${theme.hi}D0)`,
               }}
             />
           ))}

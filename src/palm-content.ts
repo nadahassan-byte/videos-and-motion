@@ -27,8 +27,11 @@ export const theme = {
   light: "#F8F3E7",
   body: "#D7D8D3",
   gold: "#B0A381",
-  /** Highlight gold, specified in the brief. */
-  hi: "#B39F74",
+  /**
+   * Area highlight. Red rather than gold: gold sat too close to the sand and
+   * the warm light in the satellite image to read clearly.
+   */
+  hi: "#D1273A",
   oxblood: "#73222D",
   display: '"Didot", "Bodoni 72", "Playfair Display", Georgia, "Liberation Serif", serif',
   text: '"Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif',
