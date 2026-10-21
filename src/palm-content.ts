@@ -16,6 +16,11 @@ export type Carousel = {
   /** Overrides the auto-computed camera push when set. */
   zoom?: number;
   /**
+   * Degrees the map is laid back into perspective. 0 is flat top-down, ~52
+   * reads like an oblique aerial photograph.
+   */
+  tilt?: number;
+  /**
    * The area the previous carousel ended on. When set, this slide opens on
    * that exact camera and highlight and moves on from it, so the three read
    * as one continuous journey rather than three separate zoom-ins.

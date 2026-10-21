@@ -92,6 +92,7 @@ export const PalmSlide: React.FC<Carousel> = ({
   area,
   zoom,
   prevArea,
+  tilt = 52,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -105,6 +106,12 @@ export const PalmSlide: React.FC<Carousel> = ({
   const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
   const tx = clamp((0.5 - cx) * CONTENT_W, Math.max(0, (CONTENT_W * scale - W) / 2));
   const ty = (0.5 - cy) * CONTENT_H;
+
+  // Foreshortening eats vertical extent, so scale up and nudge down to keep
+  // the island filling the band.
+  const tiltNow = ease(frame, s(0.6), s(2.6), tilt * 0.72, tilt);
+  const tiltZoom = (1 / Math.cos((tiltNow * Math.PI) / 180)) * 1.16;
+  const tiltShift = tiltNow * 0.3;
 
   const prevPaths = (wide(prevArea) ?? []).map(toPath);
   const prevFade = ease(frame, s(0.4), s(1.5), 1, 0);
@@ -211,9 +218,33 @@ export const PalmSlide: React.FC<Carousel> = ({
           inset: 0,
           clipPath: `path('${BAND_PATH}')`,
           WebkitClipPath: `path('${BAND_PATH}')`,
-          backgroundColor: "#16202A",
+          // Where the tilted plane recedes, this reads as horizon haze rather
+          // than an empty corner.
+          background:
+            "linear-gradient(to bottom, #C3CFD6 0%, #8AA3B2 26%, #3E6376 58%, #16202A 100%)",
         }}
       >
+        {/*
+          * Laid back into perspective so the flat satellite reads as an
+          * oblique aerial. The highlight lives inside this wrapper, so it
+          * tilts with the land instead of floating over it.
+          */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            perspective: 1150,
+            perspectiveOrigin: "50% 44%",
+          }}
+        >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            transform: `rotateX(${tiltNow}deg) scale(${tiltZoom}) translateY(${tiltShift}px)`,
+            transformOrigin: "50% 50%",
+          }}
+        >
         <div
           style={{
             position: "absolute",
@@ -308,6 +339,8 @@ export const PalmSlide: React.FC<Carousel> = ({
               />
             ))}
           </svg>
+        </div>
+        </div>
         </div>
       </div>
 
