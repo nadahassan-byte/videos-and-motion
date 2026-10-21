@@ -9,8 +9,10 @@ export type Block = {
 };
 
 export type Carousel = {
-  /** Area name under the photo, e.g. "The Trunk". */
+  /** Area name at the top of the card, e.g. "The Trunk". */
   areaName: string;
+  /** Letterspaced line under the rule, e.g. "APARTMENTS & PENTHOUSES". */
+  subtitle: string;
   blocks: Block[];
   area: Ring[];
   /** Overrides the auto-computed camera push when set. */
@@ -32,12 +34,12 @@ export const MASTHEAD = "Palm Jumeirah";
 
 export const theme = {
   /** Sampled from the approved template. */
-  bg: "#EBE2D3",
-  ink: "#14130F",
-  body: "#4A443B",
-  maroon: "#5D181D",
-  gold: "#8F6226",
-  rule: "#C7BBA6",
+  card: "#EDE0D0",
+  ink: "#1F1F1F",
+  body: "#6B5D4F",
+  gold: "#A8895F",
+  circle: "#DCCBB6",
+  rule: "#C8AA8E",
   /** Highlight on the map. */
   hi: "#E8C07A",
   display: '"Didot", "Bodoni 72", "Playfair Display", Georgia, "Liberation Serif", serif',
@@ -47,6 +49,7 @@ export const theme = {
 /** Copy taken verbatim from the supplied template artwork. */
 export const TRUNK: Carousel = {
   areaName: "The Trunk",
+  subtitle: "APARTMENTS & PENTHOUSES",
   blocks: [
     {
       title: "Waterfront Apartments",
@@ -65,6 +68,7 @@ export const TRUNK: Carousel = {
 /** Copy taken verbatim from the written brief. */
 export const FRONDS: Carousel = {
   areaName: "The Fronds",
+  subtitle: "VILLAS & MANSIONS",
   blocks: [
     {
       title: "Garden Homes",
@@ -89,6 +93,7 @@ export const FRONDS: Carousel = {
 /** Copy taken verbatim from the written brief. */
 export const CRESCENT: Carousel = {
   areaName: "The Crescent",
+  subtitle: "BRANDED RESIDENCES",
   blocks: [
     {
       title: "Branded Apartments",
