@@ -20,8 +20,9 @@ export const ConnectedTimeline: React.FC<{ step: 1 | 2 | 3 }> = ({ step }) => {
 
   const fromX = step === 1 ? M : CX[step - 2];
   const toX = CX[step - 1];
-  // Travels alongside the copy, not after it.
-  const pinX = at(frame, fps, 4.3, 5.3, fromX, toX);
+  // Runs in step with the focus window: the same 1.0-2.6s move, so the pin
+  // is already travelling the moment the map starts to.
+  const pinX = at(frame, fps, 1.0, 2.6, fromX, toX);
 
   return (
     <>
