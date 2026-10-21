@@ -5,6 +5,8 @@ import { crescent, fronds, trunk } from "./palm-geo";
 export type Bullet = { label?: string; text: string };
 
 export type Carousel = {
+  /** Small letterspaced line in the top-right corner. */
+  tagline: [string, string];
   areaName: string;
   propertyTypes: string[];
   bedroomTypes: Bullet[];
@@ -20,14 +22,16 @@ export type Carousel = {
 };
 
 export const theme = {
-  bg: "#24160E",
-  panel: "#45302A",
-  text: "#D3C1A3",
+  /** Sampled from the approved template. */
+  bg: "#E8DED1",
+  ink: "#13110D",
+  red: "#661A1B",
   gold: "#B39F74",
-  serif: 'Georgia, "Liberation Serif", "Times New Roman", serif',
+  sans: '"Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif',
 } as const;
 
 export const TRUNK: Carousel = {
+  tagline: ["ICONIC DESTINATION.", "TIMELESS APPEAL."],
   areaName: "The Trunk",
   propertyTypes: [
     "Waterfront apartments, luxury residential towers, duplexes and penthouses.",
@@ -43,6 +47,7 @@ export const TRUNK: Carousel = {
 };
 
 export const FRONDS: Carousel = {
+  tagline: ["ICONIC DESTINATION.", "TIMELESS APPEAL."],
   areaName: "The Fronds",
   propertyTypes: [
     "Private beachfront villas across 16 gated residential fronds, comprising Garden Homes, Signature Villas and custom-built mansions.",
@@ -66,6 +71,7 @@ export const FRONDS: Carousel = {
 };
 
 export const CRESCENT: Carousel = {
+  tagline: ["ICONIC DESTINATION.", "TIMELESS APPEAL."],
   areaName: "The Crescent",
   propertyTypes: [
     "Ultra-luxury branded residences, resort apartments, penthouses, sky villas and select beachfront mansions.",
