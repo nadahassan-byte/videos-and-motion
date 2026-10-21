@@ -1,19 +1,17 @@
 import type { Ring } from "./palm-geo";
 import { crescent, fronds, trunk } from "./palm-geo";
 
-/** One column: a gold pin, a serif title and a bedroom range. */
-export type Block = { title: string; range: string };
+/** One column: title, bedroom range, one line of detail. */
+export type Block = { title: string; range: string; body: string };
 
 export type Carousel = {
   areaName: string;
-  /** Letterspaced gold line under the area name. */
-  subtitle: string;
-  blocks: Block[];
-  /** Position in the 1-2-3 timeline at the foot of the slide. */
+  category: string;
+  blocks: [Block, Block];
+  /** Position in the 01-02-03 timeline. */
   step: 1 | 2 | 3;
   area: Ring[];
   zoom?: number;
-  tilt?: number;
   /** The area the previous carousel ended on, for a continuous camera. */
   prevArea?: Ring[];
 };
@@ -21,27 +19,36 @@ export type Carousel = {
 export const MASTHEAD = "Palm Jumeirah";
 export const STEPS = ["Trunk", "Fronds", "Crescent"] as const;
 
+/** Every area outlined at once, for the opening beat. */
+export const WHOLE_ISLAND: Ring[] = [...trunk, ...fronds, ...crescent];
+
 export const theme = {
-  /** Sampled from the approved template. */
-  bg: "#EFE6D6",
-  ink: "#13110D",
-  gold: "#A07637",
-  maroon: "#5C171E",
-  rule: "#CFC4B0",
-  pale: "#E5DED0",
-  /** Highlight on the map. */
-  hi: "#F3CE86",
+  /** Sampled from the approved artwork. */
+  light: "#F8F3E7",
+  body: "#D7D8D3",
+  gold: "#B0A381",
+  /** Highlight gold, specified in the brief. */
+  hi: "#B39F74",
+  oxblood: "#73222D",
   display: '"Didot", "Bodoni 72", "Playfair Display", Georgia, "Liberation Serif", serif',
-  text: 'Georgia, "Liberation Serif", "Times New Roman", serif',
+  text: '"Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif',
 } as const;
 
-/** All copy below is taken verbatim from the supplied template artwork. */
+/** Copy taken verbatim from the brief. */
 export const TRUNK: Carousel = {
   areaName: "The Trunk",
-  subtitle: "APARTMENTS & PENTHOUSES",
+  category: "APARTMENTS & PENTHOUSES",
   blocks: [
-    { title: "Waterfront Apartments", range: "STUDIOS – 3 BEDROOMS" },
-    { title: "Penthouses & Duplexes", range: "4 BEDROOMS" },
+    {
+      title: "Waterfront Apartments",
+      range: "STUDIOS–3 BEDROOMS",
+      body: "A mix of contemporary residences across Shoreline Apartments, Golden Mile, Oceana and Tiara.",
+    },
+    {
+      title: "Penthouses & Duplexes",
+      range: "4 BEDROOMS",
+      body: "Spacious residences offering generous layouts and elevated sea views.",
+    },
   ],
   step: 1,
   area: trunk,
@@ -49,22 +56,42 @@ export const TRUNK: Carousel = {
 
 export const FRONDS: Carousel = {
   areaName: "The Fronds",
-  subtitle: "PRIVATE BEACHFRONT VILLAS",
+  category: "PRIVATE BEACHFRONT VILLAS",
   blocks: [
-    { title: "Garden Homes", range: "4–5 BEDROOMS" },
-    { title: "Signature Villas & Custom Mansions", range: "5–7+ BEDROOMS" },
+    {
+      title: "Garden Homes",
+      range: "4–5 BEDROOMS",
+      body: "Private waterfront villas with gardens, swimming pools and direct beach access.",
+    },
+    {
+      title: "Signature Villas & Custom Mansions",
+      range: "5–7+ BEDROOMS",
+      body: "Larger residences on generous waterfront plots, including individually designed mansions.",
+    },
   ],
   step: 2,
   area: fronds,
   prevArea: trunk,
 };
 
+/**
+ * The brief was truncated mid-sentence for this slide, so its copy is taken
+ * from the supplied artwork instead.
+ */
 export const CRESCENT: Carousel = {
   areaName: "The Crescent",
-  subtitle: "BRANDED RESIDENCES & PENTHOUSES",
+  category: "BRANDED RESIDENCES & PENTHOUSES",
   blocks: [
-    { title: "Branded Apartments", range: "2–4 BEDROOMS" },
-    { title: "Penthouses & Sky Villas", range: "4–6+ BEDROOMS" },
+    {
+      title: "Branded Apartments",
+      range: "2–4 BEDROOMS",
+      body: "Private beaches and five-star resort living.",
+    },
+    {
+      title: "Penthouses & Sky Villas",
+      range: "4–6+ BEDROOMS",
+      body: "Expansive homes with panoramic sea views.",
+    },
   ],
   step: 3,
   area: crescent,
