@@ -13,6 +13,9 @@ import type { SlideProps } from "./slides";
 
 const PLAN_W = 1000;
 const PLAN_H = 700;
+const PAD = 12;
+const INNER_W = PLAN_W - PAD * 2;
+const INNER_H = PLAN_H - PAD * 2;
 const EASE = Easing.bezier(0.16, 1, 0.3, 1);
 
 /** Shared clamped-interpolate so every beat eases the same way. */
@@ -29,8 +32,6 @@ const anim = (
 
 export const MasterplanSlide: React.FC<SlideProps> = ({
   masterplanSrc,
-  brandLine1,
-  brandLine2,
   slideIndex,
   slideTotal,
   title,
@@ -38,9 +39,10 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
   body,
   status,
   boundary,
+  zoom,
 }) => {
   const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+  const { fps } = useVideoConfig();
 
   const d =
     boundary
@@ -52,6 +54,16 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
       )
       .join(" ") + " Z";
 
+  // Camera: scale about the boundary's centre, then slide that centre to the
+  // middle of the card. Both the image and the outline live inside this
+  // transform, so the outline stays locked to the map.
+  const cx = boundary.reduce((a, p) => a + p.x, 0) / boundary.length;
+  const cy = boundary.reduce((a, p) => a + p.y, 0) / boundary.length;
+  const scaleNow = anim(frame, [2.4 * fps, 5.4 * fps], [1, zoom]);
+  const travel = anim(frame, [2.4 * fps, 5.4 * fps], [0, 1]);
+  const tx = (0.5 - cx) * INNER_W * travel;
+  const ty = (0.5 - cy) * INNER_H * travel;
+
   return (
     <AbsoluteFill
       style={{
@@ -60,68 +72,11 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
         color: theme.text,
       }}
     >
-      {/* ---------- header ---------- */}
-      <div
-        style={{
-          position: "absolute",
-          top: 54,
-          left: 46,
-          right: 46,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          opacity: anim(frame, [0.2 * fps, 0.8 * fps], [0, 1]),
-          translate: anim(frame, [0.2 * fps, 0.8 * fps], [-18, 0]) + "px 0px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              border: `3px solid ${theme.accent}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 27,
-              fontWeight: 800,
-              letterSpacing: -1,
-              color: theme.accent,
-            }}
-          >
-            TT
-          </div>
-          <div style={{ lineHeight: 1.05 }}>
-            <div style={{ fontSize: 25, fontWeight: 500, letterSpacing: 2 }}>
-              {brandLine1}
-            </div>
-            <div
-              style={{
-                fontSize: 25,
-                fontWeight: 800,
-                letterSpacing: 2,
-                color: theme.accent,
-              }}
-            >
-              {brandLine2}
-            </div>
-          </div>
-        </div>
-        <div style={{ fontSize: 29, fontWeight: 600, letterSpacing: 6 }}>
-          {String(slideIndex).padStart(2, "0")}
-          <span style={{ color: theme.textMuted }}>
-            {" / "}
-            {String(slideTotal).padStart(2, "0")}
-          </span>
-        </div>
-      </div>
-
       {/* ---------- masterplan card ---------- */}
       <div
         style={{
           position: "absolute",
-          top: 152,
+          top: 90,
           left: 40,
           width: PLAN_W,
           height: PLAN_H,
@@ -142,30 +97,33 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
             position: "relative",
           }}
         >
-          {/* slow drift on the plan itself */}
+          {/* camera: image + outline zoom together toward the boundary */}
           <div
             style={{
               width: "100%",
               height: "100%",
-              scale: anim(frame, [0, durationInFrames], [1, 1.07]),
+              position: "relative",
+              transformOrigin: `${cx * 100}% ${cy * 100}%`,
+              scale: scaleNow,
+              translate: `${tx}px ${ty}px`,
             }}
           >
             <CanvasImage
               src={staticFile(masterplanSrc)}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
-          </div>
 
-          {/* boundary: fill fades in, outline draws itself on */}
-          <svg
-            viewBox={`0 0 ${PLAN_W} ${PLAN_H}`}
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-            }}
-          >
+            {/* boundary: fill fades in, outline draws itself on */}
+            <svg
+              viewBox={`0 0 ${PLAN_W} ${PLAN_H}`}
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+              }}
+            >
             <path
               d={d}
               fill={theme.accent}
@@ -177,7 +135,7 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
               d={d}
               fill="none"
               stroke={theme.accent}
-              strokeWidth={6}
+              strokeWidth={6 / scaleNow}
               strokeLinejoin="round"
               strokeLinecap="round"
               pathLength={1}
@@ -188,10 +146,11 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
                   [0.5 * fps, 2.1 * fps],
                   [1, 0],
                 ),
-                filter: `drop-shadow(0 0 14px ${theme.accent}99)`,
+                filter: `drop-shadow(0 0 ${14 / scaleNow}px ${theme.accent}99)`,
               }}
             />
-          </svg>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -199,7 +158,7 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
       <div
         style={{
           position: "absolute",
-          top: 886,
+          top: 850,
           left: 40,
           width: PLAN_W,
           borderRadius: theme.radiusOuter,
@@ -228,18 +187,20 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
           <div style={{ fontSize: 31, fontWeight: 700, marginTop: 18 }}>
             {subtitle}
           </div>
-          <div
-            style={{
-              fontSize: 26,
-              fontWeight: 400,
-              color: theme.textMuted,
-              marginTop: 12,
-              lineHeight: 1.35,
-              maxWidth: 580,
-            }}
-          >
-            {body}
-          </div>
+          {body ? (
+            <div
+              style={{
+                fontSize: 26,
+                fontWeight: 400,
+                color: theme.textMuted,
+                marginTop: 12,
+                lineHeight: 1.35,
+                maxWidth: 580,
+              }}
+            >
+              {body}
+            </div>
+          ) : null}
           <div
             style={{
               marginTop: 26,

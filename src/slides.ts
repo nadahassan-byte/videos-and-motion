@@ -6,45 +6,46 @@ const pointSchema = z.object({ x: z.number(), y: z.number() });
 export const slideSchema = z.object({
   /** Filename of the masterplan image inside public/. */
   masterplanSrc: z.string(),
-  brandLine1: z.string(),
-  brandLine2: z.string(),
   slideIndex: z.number().int().min(1),
   slideTotal: z.number().int().min(1),
   title: z.string(),
   subtitle: z.string(),
   body: z.string(),
   status: z.string(),
+  /** How far the camera pushes into the boundary. 1 = no zoom. */
+  zoom: z.number().min(1),
   /** The community outline drawn over the masterplan. */
   boundary: z.array(pointSchema).min(3),
 });
 
 export type SlideProps = z.infer<typeof slideSchema>;
 
-/** Trunk + marina district, traced against public/masterplan.jpg. */
-const trunkBoundary = [
-  { x: 0.455, y: 0.52 },
-  { x: 0.545, y: 0.52 },
-  { x: 0.575, y: 0.6 },
-  { x: 0.588, y: 0.7 },
-  { x: 0.585, y: 0.83 },
-  { x: 0.52, y: 0.862 },
-  { x: 0.47, y: 0.862 },
-  { x: 0.412, y: 0.83 },
-  { x: 0.415, y: 0.7 },
-  { x: 0.428, y: 0.6 },
+/** Frond A, traced against public/masterplan.jpg (top-left frond). */
+const frondABoundary = [
+  { x: 0.352, y: 0.218 },
+  { x: 0.372, y: 0.208 },
+  { x: 0.4, y: 0.224 },
+  { x: 0.432, y: 0.245 },
+  { x: 0.462, y: 0.264 },
+  { x: 0.488, y: 0.278 },
+  { x: 0.486, y: 0.292 },
+  { x: 0.456, y: 0.28 },
+  { x: 0.424, y: 0.261 },
+  { x: 0.394, y: 0.241 },
+  { x: 0.368, y: 0.236 },
+  { x: 0.35, y: 0.232 },
 ];
 
 export const auraGardens: SlideProps = {
   masterplanSrc: "masterplan.jpg",
-  brandLine1: "TILAL",
-  brandLine2: "TRAVIS",
-  slideIndex: 4,
+  slideIndex: 1,
   slideTotal: 16,
-  title: "AURA GARDENS",
-  subtitle: "3-4 bed townhouses & 4-5 bed twin villas",
-  body: "Townhouses of 2,175-2,460 sq ft, and the same twin villas found in Aura 1 & 2.",
+  title: "FROND A",
+  subtitle: "3-4 bedroom townhouses",
+  body: "",
   status: "READY",
-  boundary: trunkBoundary,
+  zoom: 3.5,
+  boundary: frondABoundary,
 };
 
 /** Second registration, to show the same template driven by different data. */
