@@ -8,3 +8,6 @@ out
 
 # Rendered videos
 out
+
+# Cesium runtime, copied from node_modules by `npm run setup-cesium`
+public/cesium

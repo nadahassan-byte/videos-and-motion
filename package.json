@@ -10,6 +10,7 @@
   "private": true,
   "dependencies": {
     "@remotion/cli": "4.0.537",
+    "cesium": "^1.146.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.537",
@@ -27,7 +28,8 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
+    "lint": "eslint src && tsc",
+    "setup-cesium": "rm -rf public/cesium && cp -r node_modules/cesium/Build/Cesium public/cesium"
   },
   "allowScripts": {
     "esbuild": false
