@@ -1,15 +1,18 @@
 import React from "react";
-import { AbsoluteFill, CanvasImage, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  CanvasImage,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { at } from "./anim";
-import { PINS, theme, WHOLE_ISLAND } from "./palm-content";
-import type { Ring } from "./palm-geo";
+import { theme } from "./palm-content";
 
 /*
  * The map image: the 1499x1049 source extended with mirrored, blurred sea to
- * 1907x2383 so it covers a 4:5 frame without cropping the island. Geometry in
- * palm-geo.ts is normalised against the ORIGINAL image, so rings are remapped
- * into this frame once, here. Map and overlay share one transform, so the
- * highlight stays registered to the land through every camera move.
+ * 1907x2383 so it covers a 4:5 frame without cropping the island. Focus rects
+ * are normalised against the ORIGINAL image, so they are remapped here.
  */
 const IMG_W = 1907;
 const IMG_H = 2383;
@@ -18,291 +21,154 @@ const SCALE_X = 0.786051;
 const PAD_Y = 0.279899;
 const SCALE_Y = 0.440201;
 
-export const toFrame = (rings: Ring[] | undefined): Ring[] | undefined =>
-  rings?.map((r) =>
-    r.map(([x, y]) => [PAD_X + x * SCALE_X, PAD_Y + y * SCALE_Y] as [number, number]),
-  );
-
 const W = 1080;
 const H = 1350;
-const CONTENT_W = 1250;
+const CONTENT_W = 1460;
 const CONTENT_H = Math.round(CONTENT_W / (IMG_W / IMG_H));
 
-const toPath = (ring: Ring) =>
-  ring
-    .map(
-      ([x, y], i) =>
-        `${i === 0 ? "M" : "L"}${(x * IMG_W).toFixed(1)} ${(y * IMG_H).toFixed(1)}`,
-    )
-    .join(" ") + "Z";
+export type Rect = [number, number, number, number];
 
-/** Where the camera sits to frame a set of rings: centre point and zoom. */
-export const cameraFor = (rings: Ring[] | undefined, zoom?: number) => {
-  if (!rings || rings.length === 0) return { cx: 0.5, cy: 0.5, scale: 1 };
-  const xs = rings.flat().map((p) => p[0]);
-  const ys = rings.flat().map((p) => p[1]);
-  const x0 = Math.min(...xs);
-  const x1 = Math.max(...xs);
-  const y0 = Math.min(...ys);
-  const y1 = Math.max(...ys);
-  // Restrained: enough of the island stays in frame to read where you are.
-  const scale =
-    zoom ?? Math.min(Math.max(Math.min(0.62 / (x1 - x0), 0.62 / (y1 - y0)), 1.04), 1.34);
+/** Original-image coords -> this frame's coords. */
+const remap = (r: Rect): Rect => [
+  PAD_X + r[0] * SCALE_X,
+  PAD_Y + r[1] * SCALE_Y,
+  PAD_X + r[2] * SCALE_X,
+  PAD_Y + r[3] * SCALE_Y,
+];
+
+/** Frame the window with room to breathe around it. */
+const cameraFor = (rect: Rect | undefined) => {
+  if (!rect) return { cx: 0.5, cy: 0.5, scale: 1 };
+  const [x0, y0, x1, y1] = remap(rect);
+  const scale = Math.min(
+    Math.max(Math.min(0.5 / (x1 - x0), 0.56 / (y1 - y0)), 1.0),
+    1.45,
+  );
   return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, scale };
 };
 
+/**
+ * The map is laid down twice: soft underneath, sharp on top and clipped to
+ * the window. The sharp copy starts soft too and resolves - a focus pull,
+ * so attention is drawn by depth of field rather than by colour.
+ */
 export const SatelliteMap: React.FC<{
-  area: Ring[];
-  prevArea?: Ring[];
-  zoom?: number;
-}> = ({ area, prevArea, zoom }) => {
+  focus: Rect;
+  prevFocus?: Rect;
+}> = ({ focus, prevFocus }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const from = cameraFor(toFrame(prevArea));
-  const to = cameraFor(toFrame(area), zoom);
-
-  // 1.0 - 2.4s: the move. Slow in, long settle.
-  const scale = at(frame, fps, 1.0, 2.4, from.scale, to.scale);
-  const cx = at(frame, fps, 1.0, 2.4, from.cx, to.cx);
-  const cy = at(frame, fps, 1.0, 2.4, from.cy, to.cy);
+  const from = cameraFor(prevFocus);
+  const to = cameraFor(focus);
+  const scale = at(frame, fps, 1.0, 2.6, from.scale, to.scale);
+  const cx = at(frame, fps, 1.0, 2.6, from.cx, to.cx);
+  const cy = at(frame, fps, 1.0, 2.6, from.cy, to.cy);
+  // The window sits high in the frame: the lower third belongs to the type.
+  const AIM_X = 0.52;
+  const AIM_Y = 0.395;
   const clamp = (v: number, lim: number) => Math.max(-lim, Math.min(lim, v));
-  const tx = clamp((0.5 - cx) * CONTENT_W, Math.max(0, (CONTENT_W * scale - W) / 2));
-  const ty = clamp((0.5 - cy) * CONTENT_H, Math.max(0, (CONTENT_H * scale - H) / 2));
+  const tx = clamp(
+    AIM_X * W - (W - CONTENT_W) / 2 - cx * CONTENT_W,
+    Math.max(0, (CONTENT_W * scale - W) / 2),
+  );
+  const ty = clamp(
+    AIM_Y * H - (H - CONTENT_H) / 2 - cy * CONTENT_H,
+    Math.max(0, (CONTENT_H * scale - H) / 2),
+  );
 
-  const paths = (toFrame(area) as Ring[]).map(toPath);
-  const wholePaths = (toFrame(WHOLE_ISLAND) as Ring[]).map(toPath);
-  const prevPaths = (toFrame(prevArea) ?? []).map(toPath);
+  // The window: slides from the previous slide's rect, so the three read on.
+  const a = remap(prevFocus ?? focus);
+  const b = remap(focus);
+  const rect = a.map((v, i) => at(frame, fps, 1.0, 2.6, v, b[i])) as Rect;
 
-  // The whole island is traced at rest, then clears as the camera moves in.
-  const wholeIn = at(frame, fps, 0.15, 0.95, 0, 0.5);
-  const wholeOut = at(frame, fps, 1.0, 2.0, 1, 0);
-  const whole = wholeIn * wholeOut;
-
-  const prevFade = at(frame, fps, 0.3, 1.4, 1, 0);
-  const draw = at(frame, fps, 2.4, 3.8, 1, 0); // 2.4-3.8s: outline draws
-  const fill = at(frame, fps, 3.8, 4.5, 0, 0.38);
-  const dim = at(frame, fps, 3.8, 4.5, 0, 0.34);
-
-  // Labels live outside the transform so they keep a constant size; this maps
-  // a point on the map to where it currently sits on screen.
   const project = (nx: number, ny: number) => ({
     x: (W - CONTENT_W) / 2 + cx * CONTENT_W + tx + (nx - cx) * CONTENT_W * scale,
     y: (H - CONTENT_H) / 2 + cy * CONTENT_H + ty + (ny - cy) * CONTENT_H * scale,
   });
-  const pinFade = at(frame, fps, 1.4, 2.5, 1, 0) * at(frame, fps, 0.1, 0.8, 0, 1);
+  const p0 = project(rect[0], rect[1]);
+  const p1 = project(rect[2], rect[3]);
+  const win = {
+    left: p0.x,
+    top: p0.y,
+    width: Math.max(1, p1.x - p0.x),
+    height: Math.max(1, p1.y - p0.y),
+  };
 
-  const key = area.length + "-" + paths.length;
-  const maskId = `sel-${key}`;
-  const prevMaskId = `prev-${key}`;
-  // The SVG viewBox is 1907 wide but drawn at CONTENT_W, so convert the
-  // brief's pixel widths into viewBox units before dividing by the zoom.
-  const PX = IMG_W / CONTENT_W;
-  const stroke = (4 * PX) / scale;
+  // 2.4 - 3.8s: the window resolves from soft to sharp.
+  const sharpBlur = at(frame, fps, 2.4, 3.8, 9, 0);
+  const frameIn = at(frame, fps, 1.2, 2.6, 0, 1);
+  const softBlur = at(frame, fps, 0.6, 2.6, 4.5, 9);
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: "#06131C", overflow: "hidden" }}>
-      <div
+  const layer = (blurPx: number) => (
+    <div
+      style={{
+        position: "absolute",
+        left: (W - CONTENT_W) / 2,
+        top: (H - CONTENT_H) / 2,
+        width: CONTENT_W,
+        height: CONTENT_H,
+        transformOrigin: `${cx * 100}% ${cy * 100}%`,
+        scale,
+        translate: `${tx}px ${ty}px`,
+      }}
+    >
+      <CanvasImage
+        src={staticFile("masterplan-frame.jpg")}
         style={{
-          position: "absolute",
-          left: (W - CONTENT_W) / 2,
-          top: (H - CONTENT_H) / 2,
-          width: CONTENT_W,
-          height: CONTENT_H,
-          transformOrigin: `${cx * 100}% ${cy * 100}%`,
-          scale,
-          translate: `${tx}px ${ty}px`,
-        }}
-      >
-        <CanvasImage
-          src={staticFile("masterplan-frame.jpg")}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            filter: "saturate(1.04) contrast(1.06) brightness(0.98)",
-          }}
-        />
-
-        <svg
-          viewBox={`0 0 ${IMG_W} ${IMG_H}`}
-          preserveAspectRatio="none"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-        >
-          <defs>
-            <mask id={maskId}>
-              <rect width={IMG_W} height={IMG_H} fill="white" />
-              {paths.map((d, i) => (
-                <path key={i} d={d} fill="black" />
-              ))}
-            </mask>
-            {prevPaths.length ? (
-              <mask id={prevMaskId}>
-                <rect width={IMG_W} height={IMG_H} fill="white" />
-                {prevPaths.map((d, i) => (
-                  <path key={i} d={d} fill="black" />
-                ))}
-              </mask>
-            ) : null}
-          </defs>
-
-          {/* the whole island, traced at rest */}
-          {whole > 0.001 ? (
-            <g opacity={whole}>
-              {wholePaths.map((d, i) => (
-                <path
-                  key={`w${i}`}
-                  d={d}
-                  fill="none"
-                  stroke={theme.hi}
-                  strokeWidth={stroke * 0.55}
-                  strokeLinejoin="round"
-                />
-              ))}
-            </g>
-          ) : null}
-
-          {/* the previous slide's highlight, carried in and cleared */}
-          {prevPaths.length ? (
-            <g opacity={prevFade}>
-              <rect
-                width={IMG_W}
-                height={IMG_H}
-                fill="#04121B"
-                opacity={0.22}
-                mask={`url(#${prevMaskId})`}
-              />
-              {prevPaths.map((d, i) => (
-                <path key={`pf${i}`} d={d} fill={theme.hi} opacity={0.3} />
-              ))}
-              {prevPaths.map((d, i) => (
-                <path
-                  key={`ps${i}`}
-                  d={d}
-                  fill="none"
-                  stroke={theme.hi}
-                  strokeWidth={stroke}
-                  strokeLinejoin="round"
-                />
-              ))}
-            </g>
-          ) : null}
-
-          {/* everything outside the selection sinks back */}
-          <rect
-            width={IMG_W}
-            height={IMG_H}
-            fill="#04121B"
-            opacity={dim}
-            mask={`url(#${maskId})`}
-          />
-
-          {/* GoldFill */}
-          {paths.map((d, i) => (
-            <path key={`f${i}`} d={d} fill={theme.hi} opacity={fill} />
-          ))}
-
-          {/* SVGOutline + SoftGlow */}
-          {paths.map((d, i) => (
-            <path
-              key={`s${i}`}
-              d={d}
-              fill="none"
-              stroke={theme.hi}
-              strokeWidth={stroke}
-              strokeLinejoin="round"
-              pathLength={1}
-              style={{
-                strokeDasharray: 1,
-                // fronds resolve in a gentle cascade rather than together
-                strokeDashoffset: Math.max(0, Math.min(1, draw * (1 + (i % 5) * 0.1))),
-                filter: `drop-shadow(0 0 ${(5 * PX) / scale}px ${theme.hi}D0)`,
-              }}
-            />
-          ))}
-        </svg>
-      </div>
-
-      {/* landmark pins over the establishing shot, clearing as we move in */}
-      {pinFade > 0.004 ? (
-        <AbsoluteFill style={{ opacity: pinFade }}>
-          <svg width={W} height={H} style={{ position: "absolute" }}>
-            {(() => {
-              const c = project(PAD_X + 0.497 * SCALE_X, PAD_Y + 0.44 * SCALE_Y);
-              const r = 0.47 * CONTENT_W * scale * SCALE_X;
-              return (
-                <circle
-                  cx={c.x}
-                  cy={c.y}
-                  r={r}
-                  fill="none"
-                  stroke={theme.gold}
-                  strokeWidth={1}
-                  strokeDasharray="5 7"
-                  opacity={0.45}
-                />
-              );
-            })()}
-            {PINS.map((p) => {
-              const a = project(PAD_X + p.at[0] * SCALE_X, PAD_Y + p.at[1] * SCALE_Y);
-              const dx = p.side === "left" ? -70 : p.side === "right" ? 70 : 0;
-              const dy = p.side === "above" ? -66 : p.side === "left" ? -34 : -28;
-              return (
-                <g key={p.label}>
-                  <line
-                    x1={a.x}
-                    y1={a.y}
-                    x2={a.x + dx}
-                    y2={a.y + dy}
-                    stroke={theme.gold}
-                    strokeWidth={1}
-                    strokeDasharray="4 5"
-                    opacity={0.8}
-                  />
-                  <circle cx={a.x} cy={a.y} r={5} fill={theme.gold} />
-                </g>
-              );
-            })}
-          </svg>
-          {PINS.map((p) => {
-            const a = project(PAD_X + p.at[0] * SCALE_X, PAD_Y + p.at[1] * SCALE_Y);
-            const dx = p.side === "left" ? -78 : p.side === "right" ? 78 : 0;
-            const dy = p.side === "above" ? -70 : p.side === "left" ? -38 : -32;
-            return (
-              <div
-                key={p.label}
-                style={{
-                  position: "absolute",
-                  left: a.x + dx - (p.side === "left" ? 156 : 0),
-                  top: a.y + dy - 18,
-                  width: p.side === "above" ? 200 : 156,
-                  marginLeft: p.side === "above" ? -100 : 0,
-                  textAlign:
-                    p.side === "left" ? "right" : p.side === "right" ? "left" : "center",
-                  fontFamily: theme.text,
-                  fontSize: 14,
-                  letterSpacing: 2,
-                  lineHeight: 1.3,
-                  whiteSpace: "pre-line",
-                  color: theme.light,
-                }}
-              >
-                {p.label}
-              </div>
-            );
-          })}
-        </AbsoluteFill>
-      ) : null}
-
-      {/* the lens: a soft brightening that gathers on the area as we move in */}
-      <AbsoluteFill
-        style={{
-          background:
-            "radial-gradient(ellipse 42% 30% at 50% 44%, rgba(255,243,216,0.13), transparent 70%)",
-          mixBlendMode: "screen",
-          opacity: at(frame, fps, 1.0, 3.0, 0, 1),
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: `blur(${blurPx}px) saturate(1.02) contrast(1.04) brightness(0.94)`,
         }}
       />
+    </div>
+  );
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: theme.deep, overflow: "hidden" }}>
+      {/* soft base */}
+      {layer(softBlur)}
+
+      {/* sharp window */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        <div
+          style={{
+            position: "absolute",
+            left: win.left,
+            top: win.top,
+            width: win.width,
+            height: win.height,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: -win.left,
+              top: -win.top,
+              width: W,
+              height: H,
+            }}
+          >
+            {layer(sharpBlur)}
+          </div>
+        </div>
+
+        {/* the window's hairline */}
+        <div
+          style={{
+            position: "absolute",
+            left: win.left,
+            top: win.top,
+            width: win.width,
+            height: win.height,
+            border: `1px solid rgba(255,255,255,${0.55 * frameIn})`,
+            boxShadow: `0 0 ${40 * frameIn}px rgba(8,28,40,0.5)`,
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
     </AbsoluteFill>
   );
 };

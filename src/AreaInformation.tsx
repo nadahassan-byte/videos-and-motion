@@ -4,15 +4,14 @@ import { at, rise } from "./anim";
 import type { Block } from "./palm-content";
 import { theme } from "./palm-content";
 
-const MARGIN = 70;
+const M = 73;
 const W = 1080;
-const DIVIDER_X = 540;
-const COL_X = [MARGIN, 567];
-const COL_W = [448, W - MARGIN - 567];
+const DIVIDER_X = 556;
+const COL_X = [M, 600];
+const COL_W = [448, W - M - 600];
 
-/** AreaTitle, Category, then the two property-type columns. */
 export const AreaInformation: React.FC<{
-  areaName: string;
+  areaName: [string, string];
   category: string;
   blocks: [Block, Block];
 }> = ({ areaName, category, blocks }) => {
@@ -21,65 +20,41 @@ export const AreaInformation: React.FC<{
 
   return (
     <>
-      {/* a short upright tick, as the template has above its closing line */}
+      {/* the name, set low and large in light lowercase */}
       <div
         style={{
           position: "absolute",
-          left: W / 2,
-          top: 858,
-          width: 1,
-          height: 26,
-          backgroundColor: theme.goldDim,
-          opacity: at(frame, fps, 4.4, 5.0, 0, 0.9),
-        }}
-      />
-
-      {/* 4.5 - 5.2s */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 898,
-          width: W,
-          textAlign: "center",
-          fontFamily: theme.display,
-          fontSize: 62,
-          lineHeight: 1,
-          letterSpacing: 2,
+          left: M,
+          top: 486,
+          fontFamily: theme.sans,
+          fontSize: 104,
+          fontWeight: 300,
+          lineHeight: 1.16,
+          letterSpacing: -1.5,
           color: theme.light,
-          ...rise(frame, fps, 4.5, 0.7, 22),
         }}
       >
-        {areaName}
+        <div style={rise(frame, fps, 4.5, 0.75, 26)}>{areaName[0]}</div>
+        <div style={rise(frame, fps, 4.62, 0.75, 26)}>{areaName[1]}</div>
       </div>
+
       <div
         style={{
           position: "absolute",
-          left: 0,
-          top: 982,
-          width: W,
-          textAlign: "center",
-          fontFamily: theme.text,
-          fontSize: 16,
-          letterSpacing: 5,
-          color: theme.gold,
-          ...rise(frame, fps, 4.8, 0.6, 16),
+          left: M,
+          top: 764,
+          fontFamily: theme.sans,
+          fontSize: 17,
+          letterSpacing: 4.2,
+          lineHeight: 1.7,
+          whiteSpace: "pre-line",
+          color: theme.light,
+          ...rise(frame, fps, 4.9, 0.65, 18),
         }}
       >
         {category}
       </div>
-      <div
-        style={{
-          position: "absolute",
-          left: W / 2 - at(frame, fps, 5.0, 5.8, 0, 62),
-          top: 1022,
-          height: 1,
-          backgroundColor: theme.goldDim,
-          width: at(frame, fps, 5.0, 5.8, 0, 124),
-        }}
-      />
 
-      {/* 5.2 - 6.0s */}
       {blocks.map((b, i) => (
         <React.Fragment key={i}>
           {i > 0 ? (
@@ -87,27 +62,23 @@ export const AreaInformation: React.FC<{
               style={{
                 position: "absolute",
                 left: DIVIDER_X,
-                top: 1064,
+                top: 958,
                 width: 1,
-                backgroundColor: theme.gold,
-                opacity: 0.4,
-                height: at(frame, fps, 5.2 + i * 0.12, 6.0, 0, 120),
+                backgroundColor: "rgba(255,255,255,0.22)",
+                height: at(frame, fps, 5.2, 6.1, 0, 196),
               }}
             />
           ) : null}
           <div
-            style={{
-              position: "absolute",
-              left: COL_X[i],
-              top: 1062,
-              width: COL_W[i],
-            }}
+            style={{ position: "absolute", left: COL_X[i], top: 956, width: COL_W[i] }}
           >
             <div
               style={{
-                fontFamily: theme.display,
-                fontSize: 30,
-                lineHeight: 1.14,
+                fontFamily: theme.sans,
+                fontSize: 21,
+                fontWeight: 600,
+                lineHeight: 1.26,
+                whiteSpace: "pre-line",
                 color: theme.light,
                 ...rise(frame, fps, 5.2 + i * 0.12, 0.6, 16),
               }}
@@ -116,11 +87,11 @@ export const AreaInformation: React.FC<{
             </div>
             <div
               style={{
-                marginTop: 11,
-                fontFamily: theme.text,
-                fontSize: 13.5,
-                letterSpacing: 2.2,
-                color: theme.gold,
+                marginTop: 12,
+                fontFamily: theme.sans,
+                fontSize: 13,
+                letterSpacing: 2.6,
+                color: theme.muted,
                 ...rise(frame, fps, 5.4 + i * 0.12, 0.55, 14),
               }}
             >
@@ -128,10 +99,10 @@ export const AreaInformation: React.FC<{
             </div>
             <div
               style={{
-                marginTop: 16,
-                fontFamily: theme.text,
-                fontSize: 17,
-                lineHeight: 1.46,
+                marginTop: 18,
+                fontFamily: theme.sans,
+                fontSize: 16,
+                lineHeight: 1.5,
                 color: theme.body,
                 ...rise(frame, fps, 5.6 + i * 0.12, 0.6, 14),
               }}

@@ -4,87 +4,74 @@ import { AreaInformation } from "./AreaInformation";
 import { ConnectedTimeline } from "./ConnectedTimeline";
 import { SatelliteMap } from "./SatelliteMap";
 import type { Carousel } from "./palm-content";
-import { MASTHEAD, SUBHEAD, theme } from "./palm-content";
+import { MASTHEAD, theme } from "./palm-content";
 
+const M = 73;
 
-/**
- * PalmJumeirahCarousel: the satellite map runs full bleed behind everything,
- * with gradients for legibility rather than panels or cards.
- */
 export const PalmSlide: React.FC<Carousel> = ({
   areaName,
   category,
   blocks,
   step,
-  area,
-  zoom,
-  prevArea,
-}) => {
-  return (
-    <AbsoluteFill>
-      <SatelliteMap area={area} prevArea={prevArea} zoom={zoom} />
+  focus,
+  prevFocus,
+}) => (
+  <AbsoluteFill style={{ backgroundColor: theme.deep }}>
+    <SatelliteMap focus={focus} prevFocus={prevFocus} />
 
-      {/* BottomGradient - and a lighter one at the head, for the masthead */}
-      <AbsoluteFill
-        style={{
-          background:
-            "linear-gradient(to bottom, rgba(4,16,24,0.62) 0%, rgba(4,16,24,0.18) 16%, rgba(4,16,24,0) 32%)",
-        }}
-      />
-      <AbsoluteFill
-        style={{
-          background:
-            "linear-gradient(to top, rgba(4,14,21,0.92) 0%, rgba(4,14,21,0.86) 14%, rgba(4,14,21,0.72) 25%, rgba(4,14,21,0.42) 36%, rgba(4,14,21,0.12) 46%, rgba(4,14,21,0) 58%)",
-        }}
-      />
+    {/* gradients carry the type; no panels */}
+    <AbsoluteFill
+      style={{
+        background:
+          "linear-gradient(to bottom, rgba(6,22,32,0.55) 0%, rgba(6,22,32,0.1) 12%, rgba(6,22,32,0) 24%)",
+      }}
+    />
+    <AbsoluteFill
+      style={{
+        background:
+          "linear-gradient(to top, rgba(5,20,29,0.93) 0%, rgba(5,20,29,0.86) 20%, rgba(5,20,29,0.62) 38%, rgba(5,20,29,0.28) 52%, rgba(5,20,29,0) 68%)",
+      }}
+    />
+    <AbsoluteFill
+      style={{
+        background:
+          "linear-gradient(to right, rgba(5,20,29,0.5) 0%, rgba(5,20,29,0.12) 34%, rgba(5,20,29,0) 55%)",
+      }}
+    />
 
-      {/* Header - fixed. The masthead is the constant across all three
-          slides, so it never animates. */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 74,
-          width: 1080,
-          textAlign: "center",
-          fontFamily: theme.display,
-          fontSize: 58,
-          lineHeight: 1,
-          letterSpacing: 11,
-          textIndent: 11,
-          color: theme.light,
-        }}
-      >
-        {MASTHEAD}
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 140,
-          width: 1080,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 20,
-        }}
-      >
-        <div style={{ width: 92, height: 1, backgroundColor: theme.goldDim }} />
-        <div
-          style={{
-            fontFamily: theme.text,
-            fontSize: 16,
-            letterSpacing: 5.2,
-            color: theme.body,
-          }}
-        >
-          {SUBHEAD}
-        </div>
-        <div style={{ width: 92, height: 1, backgroundColor: theme.goldDim }} />
-      </div>
+    {/* top bar - fixed across all three slides */}
+    <div
+      style={{
+        position: "absolute",
+        left: M,
+        top: 48,
+        display: "flex",
+        alignItems: "center",
+        gap: 18,
+        fontFamily: theme.sans,
+        fontSize: 15,
+        letterSpacing: 3.4,
+        color: theme.muted,
+      }}
+    >
+      {MASTHEAD}
+      <div style={{ width: 74, height: 1, backgroundColor: "rgba(145,170,182,0.6)" }} />
+    </div>
+    <div
+      style={{
+        position: "absolute",
+        right: M,
+        top: 48,
+        fontFamily: theme.sans,
+        fontSize: 15,
+        letterSpacing: 2.2,
+        color: theme.light,
+      }}
+    >
+      {`0${step} / 03`}
+    </div>
 
-      <AreaInformation areaName={areaName} category={category} blocks={blocks} />
-      <ConnectedTimeline step={step} />
-    </AbsoluteFill>
-  );
-};
+    <AreaInformation areaName={areaName} category={category} blocks={blocks} />
+    <ConnectedTimeline step={step} />
+  </AbsoluteFill>
+);

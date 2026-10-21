@@ -3,53 +3,64 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { at, rise } from "./anim";
 import { STEPS, theme } from "./palm-content";
 
-const MARGIN = 70;
+const M = 73;
 const W = 1080;
-const CY = 1281;
-const D = 38;
-const CX = [135, 540, 937];
+const CY = 1224;
+const CX = [92, 540, 988];
+const D = 17;
 
-/** 6.0 - 6.8s: the line advances to the active marker. */
+/** 6.0 - 6.8s: the line runs along to the active marker. */
 export const ConnectedTimeline: React.FC<{ step: 1 | 2 | 3 }> = ({ step }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  const track = W - MARGIN * 2;
-  const reached = CX[step - 1] - MARGIN;
-  const progress = at(frame, fps, 6.0, 6.8, 0, reached);
+  const reached = CX[step - 1] - M;
 
   return (
     <>
       <div
         style={{
           position: "absolute",
-          left: MARGIN,
+          left: M,
           top: CY,
           height: 1,
-          width: track,
-          backgroundColor: theme.gold,
-          opacity: at(frame, fps, 5.9, 6.3, 0, 0.42),
+          width: W - M * 2,
+          backgroundColor: "rgba(255,255,255,0.22)",
+          opacity: at(frame, fps, 5.9, 6.3, 0, 1),
         }}
       />
       <div
         style={{
           position: "absolute",
-          left: MARGIN,
+          left: M,
           top: CY,
-          height: 2,
-          width: progress,
+          height: 1,
           backgroundColor: theme.gold,
-          opacity: 0.95,
+          width: at(frame, fps, 6.0, 6.8, 0, reached),
         }}
       />
 
       {STEPS.map((label, i) => {
         const active = i === step - 1;
         const done = i < step - 1;
-        // Each marker settles as the line reaches it.
-        const atMarker = 6.0 + (i / 3) * 0.8;
+        const atM = 6.0 + (i / 3) * 0.8;
+        const show = at(frame, fps, atM, atM + 0.45, 0, 1);
         return (
           <React.Fragment key={label}>
+            {/* the active marker carries a soft outer ring */}
+            {active ? (
+              <div
+                style={{
+                  position: "absolute",
+                  left: CX[i] - D,
+                  top: CY - D,
+                  width: D * 2,
+                  height: D * 2,
+                  borderRadius: 999,
+                  border: `1px solid ${theme.gold}`,
+                  opacity: 0.55 * show,
+                }}
+              />
+            ) : null}
             <div
               style={{
                 position: "absolute",
@@ -59,33 +70,25 @@ export const ConnectedTimeline: React.FC<{ step: 1 | 2 | 3 }> = ({ step }) => {
                 height: D,
                 borderRadius: 999,
                 boxSizing: "border-box",
-                backgroundColor: active ? theme.oxblood : "rgba(8,22,30,0.5)",
-                border: `1px solid ${theme.gold}`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: theme.text,
-                fontSize: 15,
-                letterSpacing: 0.6,
-                color: active ? theme.light : done ? theme.gold : "rgba(248,243,231,0.6)",
-                opacity: at(frame, fps, atMarker, atMarker + 0.45, 0.25, 1),
+                backgroundColor: active ? theme.gold : "transparent",
+                border: `1px solid ${
+                  active || done ? theme.gold : "rgba(255,255,255,0.45)"
+                }`,
+                opacity: show,
               }}
-            >
-              {String(i + 1).padStart(2, "0")}
-            </div>
+            />
             <div
               style={{
                 position: "absolute",
-                left: CX[i] - 90,
-                top: CY + 28,
-                width: 180,
+                left: CX[i] - 140,
+                top: CY + 26,
+                width: 280,
                 textAlign: "center",
-                fontFamily: theme.text,
+                fontFamily: theme.sans,
                 fontSize: 15,
-                fontWeight: active ? 700 : 400,
-                letterSpacing: 0.8,
-                color: active ? theme.light : "rgba(215,216,211,0.62)",
-                ...rise(frame, fps, atMarker + 0.1, 0.5, 10),
+                letterSpacing: 0.4,
+                color: active ? theme.gold : "rgba(203,214,220,0.6)",
+                ...rise(frame, fps, atM + 0.1, 0.5, 10),
               }}
             >
               {label}
