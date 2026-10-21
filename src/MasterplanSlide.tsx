@@ -1,12 +1,13 @@
 import React from "react";
 import {
   AbsoluteFill,
+  CanvasImage,
   Easing,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { SitePlan } from "./SitePlan";
 import { theme } from "./theme";
 import type { SlideProps } from "./slides";
 
@@ -27,6 +28,7 @@ const anim = (
   });
 
 export const MasterplanSlide: React.FC<SlideProps> = ({
+  masterplanSrc,
   brandLine1,
   brandLine2,
   slideIndex,
@@ -148,7 +150,10 @@ export const MasterplanSlide: React.FC<SlideProps> = ({
               scale: anim(frame, [0, durationInFrames], [1, 1.07]),
             }}
           >
-            <SitePlan />
+            <CanvasImage
+              src={staticFile(masterplanSrc)}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           </div>
 
           {/* boundary: fill fades in, outline draws itself on */}

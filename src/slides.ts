@@ -4,6 +4,8 @@ import { z } from "zod";
 const pointSchema = z.object({ x: z.number(), y: z.number() });
 
 export const slideSchema = z.object({
+  /** Filename of the masterplan image inside public/. */
+  masterplanSrc: z.string(),
   brandLine1: z.string(),
   brandLine2: z.string(),
   slideIndex: z.number().int().min(1),
@@ -18,19 +20,22 @@ export const slideSchema = z.object({
 
 export type SlideProps = z.infer<typeof slideSchema>;
 
-/** The outline traced over the masterplan. Replace with the real plot shape. */
-const auraGardensBoundary = [
-  { x: 0.17, y: 0.2 },
-  { x: 0.56, y: 0.14 },
-  { x: 0.84, y: 0.22 },
-  { x: 0.87, y: 0.62 },
-  { x: 0.63, y: 0.66 },
-  { x: 0.58, y: 0.88 },
-  { x: 0.3, y: 0.84 },
-  { x: 0.13, y: 0.52 },
+/** Trunk + marina district, traced against public/masterplan.jpg. */
+const trunkBoundary = [
+  { x: 0.455, y: 0.52 },
+  { x: 0.545, y: 0.52 },
+  { x: 0.575, y: 0.6 },
+  { x: 0.588, y: 0.7 },
+  { x: 0.585, y: 0.83 },
+  { x: 0.52, y: 0.862 },
+  { x: 0.47, y: 0.862 },
+  { x: 0.412, y: 0.83 },
+  { x: 0.415, y: 0.7 },
+  { x: 0.428, y: 0.6 },
 ];
 
 export const auraGardens: SlideProps = {
+  masterplanSrc: "masterplan.jpg",
   brandLine1: "TILAL",
   brandLine2: "TRAVIS",
   slideIndex: 4,
@@ -39,7 +44,7 @@ export const auraGardens: SlideProps = {
   subtitle: "3-4 bed townhouses & 4-5 bed twin villas",
   body: "Townhouses of 2,175-2,460 sq ft, and the same twin villas found in Aura 1 & 2.",
   status: "READY",
-  boundary: auraGardensBoundary,
+  boundary: trunkBoundary,
 };
 
 /** Second registration, to show the same template driven by different data. */
