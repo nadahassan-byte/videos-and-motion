@@ -19,6 +19,7 @@ export type Carousel = {
 };
 
 export const MASTHEAD = "PALM JUMEIRAH";
+export const WATERMARK = "@mayvonwassel";
 export const STEPS = ["The Trunk", "The Fronds", "The Crescent"] as const;
 
 export const theme = {

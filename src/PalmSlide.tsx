@@ -4,7 +4,7 @@ import { AreaInformation } from "./AreaInformation";
 import { ConnectedTimeline } from "./ConnectedTimeline";
 import { SatelliteMap } from "./SatelliteMap";
 import type { Carousel } from "./palm-content";
-import { MASTHEAD, theme } from "./palm-content";
+import { MASTHEAD, theme, WATERMARK } from "./palm-content";
 
 const M = 73;
 
@@ -57,6 +57,22 @@ export const PalmSlide: React.FC<Carousel> = ({
       {MASTHEAD}
       <div style={{ width: 74, height: 1, backgroundColor: "rgba(145,170,182,0.6)" }} />
     </div>
+    {/* credit mark, fixed on every slide */}
+    <div
+      style={{
+        position: "absolute",
+        right: M,
+        top: 48,
+        fontFamily: theme.sans,
+        fontSize: 15,
+        letterSpacing: 2.2,
+        color: theme.muted,
+        opacity: 0.85,
+      }}
+    >
+      {WATERMARK}
+    </div>
+
     <AreaInformation areaName={areaName} category={category} blocks={blocks} />
     <ConnectedTimeline step={step} />
   </AbsoluteFill>
