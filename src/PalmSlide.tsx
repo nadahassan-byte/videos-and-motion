@@ -57,20 +57,6 @@ export const PalmSlide: React.FC<Carousel> = ({
       {MASTHEAD}
       <div style={{ width: 74, height: 1, backgroundColor: "rgba(145,170,182,0.6)" }} />
     </div>
-    <div
-      style={{
-        position: "absolute",
-        right: M,
-        top: 48,
-        fontFamily: theme.sans,
-        fontSize: 15,
-        letterSpacing: 2.2,
-        color: theme.light,
-      }}
-    >
-      {`0${step} / 03`}
-    </div>
-
     <AreaInformation areaName={areaName} category={category} blocks={blocks} />
     <ConnectedTimeline step={step} />
   </AbsoluteFill>
