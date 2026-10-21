@@ -57,17 +57,22 @@ export const PalmSlide: React.FC<Carousel> = ({
       {MASTHEAD}
       <div style={{ width: 74, height: 1, backgroundColor: "rgba(145,170,182,0.6)" }} />
     </div>
-    {/* credit mark, fixed on every slide */}
+    {/* Credit mark. Laid across the area name rather than parked in a
+        corner, so it cannot be cropped away without taking the title with
+        it. Sits above the information layer. */}
     <div
       style={{
         position: "absolute",
-        right: M,
-        top: 48,
+        left: M,
+        top: 616,
+        width: 1080 - M * 2,
+        zIndex: 5,
         fontFamily: theme.sans,
-        fontSize: 15,
-        letterSpacing: 2.2,
-        color: theme.muted,
-        opacity: 0.85,
+        fontSize: 30,
+        fontWeight: 400,
+        letterSpacing: 7,
+        color: "rgba(255,255,255,0.62)",
+        textShadow: "0 2px 14px rgba(4,16,24,0.75)",
       }}
     >
       {WATERMARK}
