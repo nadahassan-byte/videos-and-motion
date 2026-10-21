@@ -1,111 +1,72 @@
 import type { Ring } from "./palm-geo";
 import { crescent, fronds, trunk } from "./palm-geo";
 
-/** One column: a gold pin, a serif title, a bedroom range and a paragraph. */
-export type Block = {
-  title: string;
-  range?: string;
-  body: string;
-};
+/** One column: a gold pin, a serif title and a bedroom range. */
+export type Block = { title: string; range: string };
 
 export type Carousel = {
-  /** Area name at the top of the card, e.g. "The Trunk". */
   areaName: string;
-  /** Letterspaced line under the rule, e.g. "APARTMENTS & PENTHOUSES". */
+  /** Letterspaced gold line under the area name. */
   subtitle: string;
   blocks: Block[];
+  /** Position in the 1-2-3 timeline at the foot of the slide. */
+  step: 1 | 2 | 3;
   area: Ring[];
-  /** Overrides the auto-computed camera push when set. */
   zoom?: number;
-  /**
-   * Degrees the map is laid back into perspective. 0 is flat top-down, ~52
-   * reads like an oblique aerial photograph.
-   */
   tilt?: number;
-  /**
-   * The area the previous carousel ended on. When set, this slide opens on
-   * that exact camera and highlight and moves on from it, so the three read
-   * as one continuous journey rather than three separate zoom-ins.
-   */
+  /** The area the previous carousel ended on, for a continuous camera. */
   prevArea?: Ring[];
 };
 
 export const MASTHEAD = "Palm Jumeirah";
+export const STEPS = ["Trunk", "Fronds", "Crescent"] as const;
 
 export const theme = {
   /** Sampled from the approved template. */
-  card: "#EDE0D0",
-  ink: "#1F1F1F",
-  body: "#6B5D4F",
-  gold: "#A8895F",
-  circle: "#DCCBB6",
-  rule: "#C8AA8E",
+  bg: "#EFE6D6",
+  ink: "#13110D",
+  gold: "#A07637",
+  maroon: "#5C171E",
+  rule: "#CFC4B0",
+  pale: "#E5DED0",
   /** Highlight on the map. */
-  hi: "#E8C07A",
+  hi: "#F3CE86",
   display: '"Didot", "Bodoni 72", "Playfair Display", Georgia, "Liberation Serif", serif',
   text: 'Georgia, "Liberation Serif", "Times New Roman", serif',
 } as const;
 
-/** Copy taken verbatim from the supplied template artwork. */
+/** All copy below is taken verbatim from the supplied template artwork. */
 export const TRUNK: Carousel = {
   areaName: "The Trunk",
   subtitle: "APARTMENTS & PENTHOUSES",
   blocks: [
-    {
-      title: "Waterfront Apartments",
-      range: "STUDIOS – 3 BEDROOMS",
-      body: "A mix of contemporary residences across developments such as Shoreline Apartments, Golden Mile, Oceana and Tiara.",
-    },
-    {
-      title: "Penthouses & Duplexes",
-      range: "4 BEDROOMS",
-      body: "Spacious residences offering generous layouts, elevated views and access to the island's lifestyle amenities.",
-    },
+    { title: "Waterfront Apartments", range: "STUDIOS – 3 BEDROOMS" },
+    { title: "Penthouses & Duplexes", range: "4 BEDROOMS" },
   ],
+  step: 1,
   area: trunk,
 };
 
-/** Copy taken verbatim from the written brief. */
 export const FRONDS: Carousel = {
   areaName: "The Fronds",
-  subtitle: "VILLAS & MANSIONS",
+  subtitle: "PRIVATE BEACHFRONT VILLAS",
   blocks: [
-    {
-      title: "Garden Homes",
-      range: "4–5 BEDROOMS",
-      body: "4–5-bedroom villas with private gardens and swimming pools.",
-    },
-    {
-      title: "Signature Villas",
-      range: "5–7 BEDROOMS",
-      body: "5–7-bedroom luxury villas on larger waterfront plots.",
-    },
-    {
-      title: "Custom Mansions",
-      range: "6+ BEDROOMS",
-      body: "Typically 6+ bedrooms, including bespoke residences on prime frond locations.",
-    },
+    { title: "Garden Homes", range: "4–5 BEDROOMS" },
+    { title: "Signature Villas & Custom Mansions", range: "5–7+ BEDROOMS" },
   ],
+  step: 2,
   area: fronds,
   prevArea: trunk,
 };
 
-/** Copy taken verbatim from the written brief. */
 export const CRESCENT: Carousel = {
   areaName: "The Crescent",
-  subtitle: "BRANDED RESIDENCES",
+  subtitle: "BRANDED RESIDENCES & PENTHOUSES",
   blocks: [
-    {
-      title: "Branded Apartments",
-      range: "2–4 BEDROOMS",
-      body: "Typically 2–4 bedrooms with access to luxury resort amenities.",
-    },
-    {
-      title: "Penthouses & Sky Villas",
-      range: "4–6+ BEDROOMS",
-      body: "Typically 4–6+ bedrooms, featuring expansive layouts and panoramic sea views.",
-    },
+    { title: "Branded Apartments", range: "2–4 BEDROOMS" },
+    { title: "Penthouses & Sky Villas", range: "4–6+ BEDROOMS" },
   ],
+  step: 3,
   area: crescent,
   prevArea: fronds,
 };
