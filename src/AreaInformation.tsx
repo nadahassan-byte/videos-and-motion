@@ -34,8 +34,8 @@ export const AreaInformation: React.FC<{
           color: theme.light,
         }}
       >
-        <div style={rise(frame, fps, 4.5, 0.75, 26)}>{areaName[0]}</div>
-        <div style={rise(frame, fps, 4.62, 0.75, 26)}>{areaName[1]}</div>
+        <div style={rise(frame, fps, 4.3, 0.42, 22)}>{areaName[0]}</div>
+        <div style={rise(frame, fps, 4.4, 0.42, 22)}>{areaName[1]}</div>
       </div>
 
       <div
@@ -49,7 +49,7 @@ export const AreaInformation: React.FC<{
           lineHeight: 1.7,
           whiteSpace: "pre-line",
           color: theme.light,
-          ...rise(frame, fps, 4.9, 0.65, 18),
+          ...rise(frame, fps, 4.58, 0.38, 16),
         }}
       >
         {category}
@@ -65,7 +65,7 @@ export const AreaInformation: React.FC<{
                 top: 958,
                 width: 1,
                 backgroundColor: "rgba(255,255,255,0.22)",
-                height: at(frame, fps, 5.2, 6.1, 0, 196),
+                height: at(frame, fps, 4.72, 5.4, 0, 196),
               }}
             />
           ) : null}
@@ -80,7 +80,7 @@ export const AreaInformation: React.FC<{
                 lineHeight: 1.26,
                 whiteSpace: "pre-line",
                 color: theme.light,
-                ...rise(frame, fps, 5.2 + i * 0.12, 0.6, 16),
+                ...rise(frame, fps, 4.76 + i * 0.1, 0.34, 14),
               }}
             >
               {b.title}
@@ -92,7 +92,7 @@ export const AreaInformation: React.FC<{
                 fontSize: 13,
                 letterSpacing: 2.6,
                 color: theme.muted,
-                ...rise(frame, fps, 5.4 + i * 0.12, 0.55, 14),
+                ...rise(frame, fps, 4.9 + i * 0.1, 0.32, 12),
               }}
             >
               {b.range}
@@ -104,7 +104,7 @@ export const AreaInformation: React.FC<{
                 fontSize: 16,
                 lineHeight: 1.5,
                 color: theme.body,
-                ...rise(frame, fps, 5.6 + i * 0.12, 0.6, 14),
+                ...rise(frame, fps, 5.02 + i * 0.1, 0.34, 12),
               }}
             >
               {b.body}

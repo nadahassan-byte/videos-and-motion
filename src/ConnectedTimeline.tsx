@@ -20,7 +20,8 @@ export const ConnectedTimeline: React.FC<{ step: 1 | 2 | 3 }> = ({ step }) => {
 
   const fromX = step === 1 ? M : CX[step - 2];
   const toX = CX[step - 1];
-  const pinX = at(frame, fps, 6.0, 6.9, fromX, toX);
+  // Travels alongside the copy, not after it.
+  const pinX = at(frame, fps, 4.3, 5.3, fromX, toX);
 
   return (
     <>
