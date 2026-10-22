@@ -9,6 +9,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { poolWater } from "./effects/pool-water";
+import { timeOfDay } from "./effects/time-of-day";
 
 /**
  * A still photograph given a camera.
@@ -19,7 +20,9 @@ import { poolWater } from "./effects/pool-water";
  * the result reads as a lens travelling forward rather than as a picture
  * being enlarged.
  *
- * The water runs underneath it, so the surface lives while the camera moves.
+ * The water runs underneath it, so the surface lives while the camera moves,
+ * and the light over the whole frame travels from morning to evening while
+ * the camera travels forward.
  */
 const WATERLINE = 0.735;
 /** Where the far shore sits. The dolly expands outward from here. */
@@ -43,6 +46,19 @@ export const PoolCinemagraph: React.FC = () => {
     easing: ease,
   });
 
+  // The light settles a beat before the cut while the camera keeps going, so
+  // both ends of the day register rather than the shot arriving mid-change.
+  const dusk = interpolate(
+    frame,
+    [durationInFrames * 0.06, durationInFrames * 0.94],
+    [0, 1],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.inOut(Easing.cubic),
+    },
+  );
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#9CC6DD", overflow: "hidden" }}>
       <AbsoluteFill
@@ -64,6 +80,7 @@ export const PoolCinemagraph: React.FC = () => {
               period: PERIOD,
               time: t * PERIOD,
             }),
+            timeOfDay({ progress: dusk, waterline: WATERLINE }),
           ]}
         />
       </AbsoluteFill>
