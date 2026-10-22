@@ -4,6 +4,7 @@ import { auraGardens, auraRidge, slideSchema } from "./slides";
 import { PalmSlide } from "./PalmSlide";
 import { CRESCENT, FRONDS, TRUNK } from "./palm-content";
 import { PalmFlyover } from "./PalmFlyover";
+import { PoolCinemagraph } from "./PoolCinemagraph";
 
 const palm = { durationInFrames: 270, fps: 30, width: 1080, height: 1350 } as const;
 
@@ -27,6 +28,15 @@ export const RemotionRoot: React.FC = () => {
         component={PalmSlide}
         {...palm}
         defaultProps={CRESCENT}
+      />
+
+      <Composition
+        id="PoolCinemagraph"
+        component={PoolCinemagraph}
+        durationInFrames={180}
+        fps={30}
+        width={1080}
+        height={1350}
       />
 
       <Composition
