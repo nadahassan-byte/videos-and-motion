@@ -5,6 +5,7 @@ import { PalmSlide } from "./PalmSlide";
 import { CRESCENT, FRONDS, TRUNK } from "./palm-content";
 import { PalmFlyover } from "./PalmFlyover";
 import { PoolCinemagraph } from "./PoolCinemagraph";
+import { TextLab } from "./TextLab";
 
 const palm = { durationInFrames: 270, fps: 30, width: 1080, height: 1350 } as const;
 
@@ -34,6 +35,15 @@ export const RemotionRoot: React.FC = () => {
         id="PoolCinemagraph"
         component={PoolCinemagraph}
         durationInFrames={240}
+        fps={30}
+        width={1080}
+        height={1350}
+      />
+
+      <Composition
+        id="TextLab"
+        component={TextLab}
+        durationInFrames={450}
         fps={30}
         width={1080}
         height={1350}
